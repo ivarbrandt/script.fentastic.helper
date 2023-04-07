@@ -174,7 +174,7 @@ class CPaths:
 				if not header: return None, None
 				if 'category_top' in self.cpath_setting: return path, header
 				if 'category_bottom' in self.cpath_setting: return path, header
-				types = (('Poster', 'WidgetListPoster'), ('Landscape', 'WidgetListLandscape'), ('Episode', 'WidgetListEpisodes'))
+				types = (('Poster', 'WidgetListPoster'), ('Landscape', 'WidgetListLandscape'), ('LandscapeInfo', 'WidgetListEpisodes'))
 				choice = dialog.select('Choose Type', [i[0] for i in types])
 				if choice == -1: return
 				_type = types[choice][1]
