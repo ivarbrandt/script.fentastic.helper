@@ -13,34 +13,24 @@ max_widgets = 10
 settings_path = xbmcvfs.translatePath('special://profile/addon_data/script.FENtastic.helper/')
 database_path = xbmcvfs.translatePath('special://profile/addon_data/script.FENtastic.helper/cpath_cache.db')
 movies_widgets_xml, tvshows_widgets_xml = 'script-FENtastic-widget_movies', 'script-FENtastic-widget_tvshows'
-movies_categories_top_xml, tvshows_categories_top_xml = 'script-FENtastic-widget_movie_category_top', 'script-FENtastic-widget_tvshow_category_top'
-movies_categories_bottom_xml, tvshows_categories_bottom_xml = 'script-FENtastic-widget_movie_category_bottom', 'script-FENtastic-widget_tvshow_category_bottom'
 movies_main_menu_xml, tvshows_main_menu_xml = 'script-FENtastic-main_menu_movies', 'script-FENtastic-main_menu_tvshows'
-
 default_xmls = {'movie.widget': (movies_widgets_xml, xmls.default_widget, 'MovieWidgets'),
 				'tvshow.widget': (tvshows_widgets_xml, xmls.default_widget, 'TVShowWidgets'),
-				'movie.category_top_widget': (movies_categories_top_xml, xmls.default_category_top_widget, 'MovieCategoryWidgetTop'),
-				'movie.category_bottom_widget': ( movies_categories_bottom_xml, xmls.default_category_bottom_widget, 'MovieCategoryWidgetBottom'),
-				'tvshow.category_top_widget': (tvshows_categories_top_xml, xmls.default_category_top_widget, 'TVShowCategoryWidgetTop'),
-				'tvshow.category_bottom_widget': (tvshows_categories_bottom_xml, xmls.default_category_bottom_widget, 'TVShowCategoryWidgetBottom'),
 				'movie.main_menu': (movies_main_menu_xml, xmls.default_main_menu, 'MoviesMainMenu'),
-				'tvshow.main_menu': (tvshows_main_menu_xml, xmls.default_main_menu, 'TVShowsMainMenu')
-				}
+				'tvshow.main_menu': (tvshows_main_menu_xml, xmls.default_main_menu, 'TVShowsMainMenu')}
+main_include_dict = {'movie': {'main_menu': None, 'widget': 'MovieWidgets'},
+					'tvshow': {'main_menu': None, 'widget': 'TVShowWidgets'}}
+widget_types = (('Poster', 'WidgetListPoster'), ('Landscape', 'WidgetListLandscape'), ('LandscapeInfo', 'WidgetListEpisodes'), ('Category', 'WidgetListCategories'))
+default_path = 'addons://sources/video'
 
 class CPaths:
 	def __init__(self, cpath_setting):
-		self.cpath_setting = cpath_setting
-		self.refresh_cpaths = False
-		self.last_cpath = None
 		self.connect_database()
-		self.media_type = 'movie' if 'movie' in self.cpath_setting else 'tvshow'
-		self.cpath_lookup = "'%s%s'" % (self.cpath_setting, '%')
-		self.set_main_include()
-
-	def set_main_include(self):
-		if 'category_top' in self.cpath_setting: self.main_include = 'MovieCategoryWidgetTop' if self.media_type == 'movie' else 'TVShowCategoryWidgetTop'
-		elif 'category_bottom' in self.cpath_setting: self.main_include = 'MovieCategoryWidgetBottom' if self.media_type == 'movie' else 'TVShowCategoryWidgetBottom'
-		else: self.main_include = 'MovieWidgets' if self.media_type == 'movie' else 'TVShowWidgets'
+		self.cpath_setting = cpath_setting
+		self.cpath_lookup = "'%s'" % (self.cpath_setting + '%')
+		self.media_type, self.path_type = self.cpath_setting.split('.')
+		self.main_include = main_include_dict[self.media_type][self.path_type]
+		self.refresh_cpaths, self.last_cpath = False, None
 
 	def connect_database(self):
 		if not xbmcvfs.exists(settings_path): xbmcvfs.mkdir(settings_path)
@@ -61,86 +51,124 @@ class CPaths:
 		self.dbcon.commit()
 
 	def fetch_current_cpaths(self):
-		current_cpaths = self.dbcur.execute(
+		results = self.dbcur.execute(
 			"""SELECT * FROM custom_paths WHERE cpath_setting LIKE %s""" % self.cpath_lookup).fetchall()
-		try: current_cpaths.sort(key=lambda k: k[0])
+		try: results.sort(key=lambda k: k[0])
 		except: pass
-		return current_cpaths
+		current_dict = {}
+		for item in results:
+			try: key = int(item[0].split('.')[-1])
+			except: key = item[0]
+			data = {'cpath_setting': item[0], 'cpath_path': item[1], 'cpath_header': item[2], 'cpath_type': item[3], 'cpath_label': item[4]}
+			current_dict[key] = data
+		return current_dict
 
-	def make_media_xml(self, active_cpaths):
+	def path_browser(self, header='', path=default_path):
+		show_busy_dialog()
+		header = self.clean_header(header)
+		folders = []
+		if path != default_path: folders.append(('Use [B]%s[/B] As Path' % header, 'set_path'))
+		result = files_get_directory(path)
+		hide_busy_dialog()
+		if result:
+			folders.extend([('%s >>' % i['label'], i['file']) for i in result if i['file'].startswith('plugin://') and i['filetype'] == 'directory'])
+			choice = dialog.select('Choose Path', [i[0] for i in folders])
+			if choice == -1: return None, None
+			choice = folders[choice]
+			if choice[1] == 'set_path': return path, header
+			else: return self.path_browser(choice[0], choice[1])
+		try: dialog.close()
+		except: pass
+
+	def make_main_menu_xml(self, active_cpaths):
 		if not self.refresh_cpaths: return
-		if not active_cpaths: return
-		if 'category_top' in active_cpaths[0][0]:
-			item = active_cpaths[0]
-			xml_file = 'special://skin/xml/%s.xml' % (movies_categories_top_xml if self.media_type == 'movie' else tvshows_categories_top_xml)
-			list_id = '19009' if self.media_type == 'movie' else '22009'
-			final_format = xmls.category_top_xml.format(main_include=self.main_include, cpath_path=item[1], cpath_header=item[2], cpath_list_id=list_id)
-			if not '&amp;' in final_format: final_format = final_format.replace('&', '&amp;')
-		elif 'category_bottom' in active_cpaths[0][0]:
-			item = active_cpaths[0]
-			xml_file = 'special://skin/xml/%s.xml' % (movies_categories_bottom_xml if self.media_type == 'movie' else tvshows_categories_bottom_xml)
-			list_id = '19025' if self.media_type == 'movie' else '22025'
-			final_format = xmls.category_bottom_xml.format(main_include=self.main_include, cpath_path=item[1], cpath_header=item[2], cpath_list_id=list_id)
-			if not '&amp;' in final_format: final_format = final_format.replace('&', '&amp;')
-		elif 'main_menu' in active_cpaths[0][0]:
-			item = active_cpaths[0]
-			xml_file = 'special://skin/xml/%s.xml' % (movies_main_menu_xml if self.media_type == 'movie' else tvshows_main_menu_xml)
-			main_menu_xml = xmls.main_menu_movies_xml if self.media_type == 'movie' else xmls.main_menu_tvshows_xml
-			final_format = main_menu_xml.format(main_menu_path=item[1])
-			if not '&amp;' in final_format: final_format = final_format.replace('&', '&amp;')
-		else:
-			xml_file = 'special://skin/xml/%s.xml' % (movies_widgets_xml if self.media_type == 'movie' else tvshows_widgets_xml)
-			list_id = 19010 if self.media_type == 'movie' else 22010
-			final_format = xmls.media_xml_start.format(main_include=self.main_include)
-			if not active_cpaths: active_cpaths = [('', '', '', 'WidgetListPoster', '')]
-			for item in active_cpaths:
-				body = xmls.media_xml_body.format(cpath_type=item[3], cpath_path=item[1], cpath_header=item[2], cpath_list_id=list_id)
-				if not '&amp;' in body: final_format += body.replace('&', '&amp;')
-				list_id += 1
-			final_format += xmls.media_xml_end
+		if not active_cpaths:
+			Thread(target=self.reload_skin).start()
+			self.make_default_xml()
+		if self.media_type == 'movie': menu_xml_file, main_menu_xml, key = movies_main_menu_xml, xmls.main_menu_movies_xml, 'movie.main_menu'
+		else: menu_xml_file, main_menu_xml, key = tvshows_main_menu_xml, xmls.main_menu_tvshows_xml, 'tvshow.main_menu'
+		xml_file = 'special://skin/xml/%s.xml' % (menu_xml_file)
+		final_format = main_menu_xml.format(main_menu_path=active_cpaths[key]['cpath_path'])
+		if not '&amp;' in final_format: final_format = final_format.replace('&', '&amp;')
+		self.write_xml(xml_file, final_format)
+
+	def make_widget_xml(self, active_cpaths):
+		if not self.refresh_cpaths: return
+		if not active_cpaths:
+			Thread(target=self.reload_skin).start()
+			self.make_default_xml()
+		xml_file = 'special://skin/xml/%s.xml' % (movies_widgets_xml if self.media_type == 'movie' else tvshows_widgets_xml)
+		list_id = 19010 if self.media_type == 'movie' else 22010
+		final_format = xmls.media_xml_start.format(main_include=self.main_include)
+		for k, v  in active_cpaths.items():
+			cpath_list_id = list_id + k
+			cpath_path, cpath_header, cpath_type, cpath_label = v['cpath_path'], v['cpath_header'], v['cpath_type'], v['cpath_label']
+			body = xmls.stacked_media_xml_body if 'Stacked' in cpath_label else xmls.media_xml_body
+			body = body.format(cpath_type=cpath_type, cpath_path=cpath_path, cpath_header=cpath_header, cpath_list_id=cpath_list_id)
+			if not '&amp;' in body: final_format += body.replace('&', '&amp;')
+		final_format += xmls.media_xml_end
+		self.write_xml(xml_file, final_format)
+
+	def write_xml(self, xml_file, final_format):
 		with xbmcvfs.File(xml_file, 'w') as f: f.write(final_format)
 		Thread(target=self.reload_skin).start()
 
+	def manage_main_menu_path(self):
+		active_cpaths = self.fetch_current_cpaths()
+		if active_cpaths:
+			choice = self.manage_action(self.cpath_setting)
+			if choice == 'clear_path':
+				Thread(target=self.reload_skin).start()
+				self.make_default_xml()
+				dialog.ok('FENtastic', 'Path Cleared')
+				return
+			if choice is None: return
+		cpath_path = self.path_browser()[0]
+		if not cpath_path: return self.make_main_menu_xml(active_cpaths)
+		self.add_cpath_to_database(self.cpath_setting, cpath_path, '', '', '')
+		self.make_main_menu_xml(self.fetch_current_cpaths())
+
 	def manage_widgets(self):
 		active_cpaths = self.fetch_current_cpaths()
-		display_cpath_list = []
-		display_cpath_list_append = display_cpath_list.append
-		for count, item in enumerate(active_cpaths, 1):
-			cpath_setting = item[0]
-			name = 'Widget %s : %s' % (count, item[4])
-			display_cpath_list_append((name, cpath_setting, True))
-		len_display_cpaths = len(display_cpath_list)
-		if len_display_cpaths < max_widgets:
-			cpaths_number = len_display_cpaths + 1
-			cpath_setting = '%s.%s' % (self.cpath_setting, cpaths_number)
-			name = 'Widget %s :' % cpaths_number
-			display_cpath_list_append((name, cpath_setting, False))
-		hide_busy_dialog()
-		choice = dialog.select('Choose Widget', [i[0] for i in display_cpath_list])
-		if choice == -1: return self.make_media_xml(active_cpaths)
-		self.chosen_cpath = display_cpath_list[choice]
-		self.last_cpath = self.chosen_cpath[2]
-		self.cpath_maker()
+		widget_choices = ['Widget %s : %s' % (count, active_cpaths.get(count, {}).get('cpath_label', '')) for count in range(1,11)]
+		choice = dialog.select('Choose Widget', widget_choices)
+		if choice == -1: return self.make_widget_xml(active_cpaths)
+		active_cpath_check = choice + 1
+		if active_cpath_check in active_cpaths:
+			cpath_setting = active_cpaths[active_cpath_check]['cpath_setting']
+			choice = self.manage_action(cpath_setting)
+			if choice in ('clear_path', None): return self.manage_widgets()
+		else: cpath_setting = '%s.%s' % (self.cpath_setting, active_cpath_check)
+		cpath_path, default_header = self.path_browser()
+		if not cpath_path: return self.manage_widgets()
+		cpath_header = self.widget_header(default_header)
+		if not cpath_header: return self.manage_widgets()
+		widget_type = self.widget_type()
+		if not widget_type: return self.manage_widgets()
+		if widget_type[0] == 'Category' and dialog.yesno('Stacked Widget', 'Make [B]%s[/B] a Stacked Widget?' % cpath_header):
+			widget_type = self.widget_type(label='Choose Stacked Widget Type', type_limit=4)
+			if not widget_type: return self.manage_widgets()
+			cpath_type, cpath_label = '%sStacked' % widget_type[1], '%s | Stacked (%s) | Category' % (cpath_header, widget_type[0])
+		else: cpath_type, cpath_label = widget_type[1], '%s | %s' % (cpath_header, widget_type[0])
+		self.add_cpath_to_database(cpath_setting, cpath_path, cpath_header, cpath_type, cpath_label)
 		return self.manage_widgets()
 
-	def manage_category_top_widget(self):
-		cpath_path, cpath_header = self.cpath_maker()
-		if cpath_path is None: return
-		self.add_cpath_to_database(self.cpath_setting, cpath_path, cpath_header, '', '')
-		self.make_media_xml([(self.cpath_setting, cpath_path, cpath_header, '', '')])
+	def widget_header(self, default_header):
+		header = dialog.input('Label', defaultt=default_header)
+		return header or None
 
-	def manage_category_bottom_widget(self):
-		cpath_path, cpath_header = self.cpath_maker()
-		if cpath_path is None: return
-		self.add_cpath_to_database(self.cpath_setting, cpath_path, cpath_header, '', '')
-		self.make_media_xml([(self.cpath_setting, cpath_path, cpath_header, '', '')])
+	def widget_type(self, label='Choose Type', type_limit=4):
+		choice = dialog.select(label, [i[0] for i in widget_types[0:type_limit]])
+		if choice == -1: return None
+		return widget_types[choice]
 
-	def manage_main_menu_path(self):
-		cpath_path = self.cpath_maker()
-		if not cpath_path: return
-		self.add_cpath_to_database(self.cpath_setting, cpath_path, '', '', '')
-		self.make_media_xml([(self.cpath_setting, cpath_path, '', '', '')])
-	
+	def manage_action(self, cpath_setting):
+		choices = [('Clear Current Path', 'clear_path'), ('Remake Path', 'remake_path')]
+		choice = dialog.select('%s Exists' % self.path_type.capitalize(), [i[0] for i in choices])
+		if choice == -1: return None
+		self.remove_cpath_from_database(cpath_setting)
+		return choices[choice][1]
+
 	def reload_skin(self):
 		if window.getProperty('fen.clear_path_refresh') == 'true': return
 		window.setProperty('fen.clear_path_refresh', 'true')
@@ -152,48 +180,16 @@ class CPaths:
 	def clean_header(self, header):
 		return header.replace('[B]', '').replace('[/B]', '').replace(' >>', '')
 
-	def cpath_maker(self, header=None, path=None):
-		show_busy_dialog()
-		if header: header = self.clean_header(header)
-		if path: folders = [('Use [B]%s[/B] As Path' % header, 'set_path')]
-		else:
-			folders = [('Clear Current Path', 'clear_path')] if self.last_cpath else []
-			path = 'addons://sources/video'
-		result = files_get_directory(path)
-		if result:
-			folders.extend([('%s >>' % i['label'], i['file']) for i in result if i['file'].startswith('plugin://') and i['filetype'] == 'directory'])
-			hide_busy_dialog()
-			choice = dialog.select('Choose Path', [i[0] for i in folders])
-			if choice == -1:
-				if 'main_menu' in self.cpath_setting: return None
-				else: return None, None
-			choice = folders[choice]			
-			if choice[1] == 'set_path':
-				if 'main_menu' in self.cpath_setting: return path
-				header = dialog.input('Label', defaultt=header)
-				if not header: return None, None
-				if 'category_top' in self.cpath_setting: return path, header
-				if 'category_bottom' in self.cpath_setting: return path, header
-				types = (('Poster', 'WidgetListPoster'), ('Landscape', 'WidgetListLandscape'), ('LandscapeInfo', 'WidgetListEpisodes'))
-				choice = dialog.select('Choose Type', [i[0] for i in types])
-				if choice == -1: return
-				_type = types[choice][1]
-				label_type = types[choice][0]
-				setting_label = '%s | %s' % (header, label_type)
-				self.add_cpath_to_database(self.chosen_cpath[1], path, header, _type, setting_label)
-			elif choice[1] == 'clear_path':
-				if 'category_top' in self.cpath_setting or 'main_menu' in self.cpath_setting: self.remove_cpath_from_database(self.cpath_setting)
-				if 'category_bottom' in self.cpath_setting or 'main_menu' in self.cpath_setting: self.remove_cpath_from_database(self.cpath_setting)
-				else: self.remove_cpath_from_database(self.chosen_cpath[1])
-			else: return self.cpath_maker(choice[0], choice[1])
-		else: hide_busy_dialog()
-		try: dialog.close()
-		except: pass
-
-	def remake_cpaths(self):
+	def remake_main_menus(self):
 		self.refresh_cpaths = True
-		current_cpaths = self.fetch_current_cpaths()
-		if current_cpaths: self.make_media_xml(current_cpaths)
+		active_cpaths = self.fetch_current_cpaths()
+		if active_cpaths: self.make_main_menu_xml(active_cpaths)
+		else: self.make_default_xml()
+
+	def remake_widgets(self):
+		self.refresh_cpaths = True
+		active_cpaths = self.fetch_current_cpaths()
+		if active_cpaths: self.make_widget_xml(active_cpaths)
 		else: self.make_default_xml()
 
 	def make_default_xml(self):
@@ -205,7 +201,8 @@ class CPaths:
 
 
 def remake_all_cpaths(silent=False):
-	for item in ('movie.widget', 'tvshow.widget', 'movie.category_top_widget', 'movie.category_bottom_widget', 'tvshow.category_top_widget', 'tvshow.category_bottom_widget', 'movie.main_menu', 'tvshow.main_menu'): CPaths(item).remake_cpaths()
+	for item in ('movie.widget', 'tvshow.widget'): CPaths(item).remake_widgets()
+	for item in ('movie.main_menu', 'tvshow.main_menu'): CPaths(item).remake_main_menus()
 	if not silent: xbmcgui.Dialog().ok('FENtastic', 'Menus and Widgets Remade')
 
 def files_get_directory(directory, properties=['title', 'file', 'thumbnail']):

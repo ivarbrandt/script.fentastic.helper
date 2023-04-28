@@ -17,12 +17,6 @@ def routing():
 	elif mode == 'manage_widgets':
 		from modules.cpath_maker import CPaths
 		return CPaths(_get('cpath_setting')).manage_widgets()
-	elif mode == 'manage_category_top_widget':
-		from modules.cpath_maker import CPaths
-		return CPaths(_get('cpath_setting')).manage_category_top_widget()
-	elif mode == 'manage_category_bottom_widget':
-		from modules.cpath_maker import CPaths
-		return CPaths(_get('cpath_setting')).manage_category_bottom_widget()
 	elif mode == 'manage_main_menu_path':
 		from modules.cpath_maker import CPaths
 		return CPaths(_get('cpath_setting')).manage_main_menu_path()

@@ -17,32 +17,19 @@ media_xml_body = '\
 \n            <param name="list_id" value="{cpath_list_id}"/>\
 \n        </include>'
 
-
-category_top_xml = '\
-<?xml version="1.0" encoding="UTF-8"?>\
-\n<includes>\
-\n    <include name="{main_include}">\
-\n        <include content="WidgetListCategories">\
+stacked_media_xml_body = '\
+\n        <include content="WidgetListCategoriesStacked">\
 \n            <param name="content_path" value="{cpath_path}"/>\
 \n            <param name="widget_header" value="{cpath_header}"/>\
 \n            <param name="widget_target" value="videos"/>\
 \n            <param name="list_id" value="{cpath_list_id}"/>\
 \n        </include>\
-\n    </include>\
-\n</includes>'
-
-category_bottom_xml = '\
-<?xml version="1.0" encoding="UTF-8"?>\
-\n<includes>\
-\n    <include name="{main_include}">\
-\n        <include content="WidgetListCategories">\
-\n            <param name="content_path" value="{cpath_path}"/>\
-\n            <param name="widget_header" value="{cpath_header}"/>\
+\n        <include content="{cpath_type}">\
+\n            <param name="content_path" value="$INFO[Container({cpath_list_id}).ListItem.FolderPath]"/>\
+\n            <param name="widget_header" value="$INFO[Container({cpath_list_id}).ListItem.Label]"/>\
 \n            <param name="widget_target" value="videos"/>\
-\n            <param name="list_id" value="{cpath_list_id}"/>\
-\n        </include>\
-\n    </include>\
-\n</includes>'
+\n            <param name="list_id" value="{cpath_list_id}1"/>\
+\n        </include>'
 
 main_menu_movies_xml = '\
 <?xml version="1.0" encoding="UTF-8"?>\
@@ -81,26 +68,9 @@ default_widget = '\
 \n    </include>\
 \n</includes>'
 
-default_category_top_widget = '\
-<?xml version="1.0" encoding="UTF-8"?>\
-\n<includes>\
-\n    <include name="{includes_type}">\
-\n    </include>\
-\n</includes>'
-
-default_category_bottom_widget = '\
-<?xml version="1.0" encoding="UTF-8"?>\
-\n<includes>\
-\n    <include name="{includes_type}">\
-\n    </include>\
-\n</includes>'
-
 default_main_menu = '\
 <?xml version="1.0" encoding="UTF-8"?>\
 \n<includes>\
 \n    <include name="{includes_type}">\
 \n    </include>\
 \n</includes>'
-
-
-
