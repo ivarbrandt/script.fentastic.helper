@@ -25,8 +25,8 @@ stacked_media_xml_body = '\
 \n            <param name="list_id" value="{cpath_list_id}"/>\
 \n        </include>\
 \n        <include content="{cpath_type}">\
-\n            <param name="content_path" value="$INFO[Window(Home).Property(FENtastic.{cpath_list_id}.path)]"/>\
-\n            <param name="widget_header" value="$INFO[Window(Home).Property(FENtastic.{cpath_list_id}.label)]"/>\
+\n            <param name="content_path" value="$INFO[Window(Home).Property(fentastic.{cpath_list_id}.path)]"/>\
+\n            <param name="widget_header" value="$INFO[Window(Home).Property(fentastic.{cpath_list_id}.label)]"/>\
 \n            <param name="widget_target" value="videos"/>\
 \n            <param name="list_id" value="{cpath_list_id}1"/>\
 \n        </include>'

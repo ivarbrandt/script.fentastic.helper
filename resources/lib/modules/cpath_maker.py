@@ -10,10 +10,10 @@ dialog = xbmcgui.Dialog()
 window = xbmcgui.Window(10000)
 max_widgets = 10
 
-settings_path = xbmcvfs.translatePath('special://profile/addon_data/script.FENtastic.helper/')
-database_path = xbmcvfs.translatePath('special://profile/addon_data/script.FENtastic.helper/cpath_cache.db')
-movies_widgets_xml, tvshows_widgets_xml = 'script-FENtastic-widget_movies', 'script-FENtastic-widget_tvshows'
-movies_main_menu_xml, tvshows_main_menu_xml = 'script-FENtastic-main_menu_movies', 'script-FENtastic-main_menu_tvshows'
+settings_path = xbmcvfs.translatePath('special://profile/addon_data/script.fentastic.helper/')
+database_path = xbmcvfs.translatePath('special://profile/addon_data/script.fentastic.helper/cpath_cache.db')
+movies_widgets_xml, tvshows_widgets_xml = 'script-fentastic-widget_movies', 'script-fentastic-widget_tvshows'
+movies_main_menu_xml, tvshows_main_menu_xml = 'script-fentastic-main_menu_movies', 'script-fentastic-main_menu_tvshows'
 default_xmls = {'movie.widget': (movies_widgets_xml, xmls.default_widget, 'MovieWidgets'),
 				'tvshow.widget': (tvshows_widgets_xml, xmls.default_widget, 'TVShowWidgets'),
 				'movie.main_menu': (movies_main_menu_xml, xmls.default_main_menu, 'MoviesMainMenu'),

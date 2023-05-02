@@ -4,7 +4,7 @@ from modules.cpath_maker import CPaths, files_get_directory
 from modules.logger import logger
 
 window, get_infolabel, getCurrentWindowId = xbmcgui.Window(10000), xbmc.getInfoLabel, xbmcgui.getCurrentWindowId
-info_label, info_folderpath, label_prop, path_prop, stacked_prop = 'ListItem.Label', 'ListItem.FolderPath', 'FENtastic.%s.label', 'FENtastic.%s.path', 'FENtastic_stacked_list_id'
+info_label, info_folderpath, label_prop, path_prop, stacked_prop = 'ListItem.Label', 'ListItem.FolderPath', 'fentastic.%s.label', 'fentastic.%s.path', 'fentastic_stacked_list_id'
 not_home_wait, home_wait = 2.0, 0.75
 
 def starting_widgets():
