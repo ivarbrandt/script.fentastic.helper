@@ -20,7 +20,7 @@ default_xmls = {'movie.widget': (movies_widgets_xml, xmls.default_widget, 'Movie
 				'tvshow.main_menu': (tvshows_main_menu_xml, xmls.default_main_menu, 'TVShowsMainMenu')}
 main_include_dict = {'movie': {'main_menu': None, 'widget': 'MovieWidgets'},
 					'tvshow': {'main_menu': None, 'widget': 'TVShowWidgets'}}
-widget_types = (('Poster', 'WidgetListPoster'), ('Landscape', 'WidgetListLandscape'), ('LandscapeInfo', 'WidgetListEpisodes'), ('Category', 'WidgetListCategories'))
+widget_types = (('Poster', 'WidgetListPoster'), ('Landscape', 'WidgetListLandscape'), ('LandscapeInfo', 'WidgetListEpisodes'), ('Category', 'WidgetListCategory'))
 default_path = 'addons://sources/video'
 
 class CPaths:
