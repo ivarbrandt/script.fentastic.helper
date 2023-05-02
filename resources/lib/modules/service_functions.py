@@ -21,7 +21,7 @@ def starting_widgets():
 				if not cpath_setting: continue
 				try: widget_number = cpath_setting.split('.')[2]
 				except: continue
-				list_id = '%s01%s' % ('5' if widget_type == 'movie' else '6', widget_number)
+				list_id = '%s01%s' % ('19' if widget_type == 'movie' else '22', widget_number)
 				first_item = files_get_directory(active_widget['cpath_path'])[0]
 				if not first_item: continue
 				cpath_label, cpath_path = first_item['label'], first_item['file']
@@ -37,7 +37,7 @@ def widget_monitor():
 		list_id = window.getProperty(stacked_prop)
 		cpath_label, cpath_path = get_infolabel(info_label), get_infolabel(info_folderpath)
 		monitor.waitForAbort(home_wait)
-		if '' in (list_id, cpath_label, cpath_path) or len(list_id) != 4 or get_infolabel(info_folderpath) != cpath_path: continue
+		if '' in (list_id, cpath_label, cpath_path) or len(list_id) != 5 or get_infolabel(info_folderpath) != cpath_path: continue
 		window.setProperty(label_prop % list_id, cpath_label)
 		window.setProperty(path_prop % list_id, cpath_path)
 		window.getControl(int(list_id + '1')).selectItem(0)
