@@ -146,7 +146,7 @@ class CPaths:
 		widget_type = self.widget_type()
 		if not widget_type: return self.manage_widgets()
 		if widget_type[0] == 'Category' and dialog.yesno('Stacked Widget', 'Make [B]%s[/B] a Stacked Widget?' % cpath_header):
-			widget_type = self.widget_type(label='Choose Stacked Widget Type', type_limit=4)
+			widget_type = self.widget_type(label='Choose Stacked Widget Type')
 			if not widget_type: return self.manage_widgets()
 			cpath_type, cpath_label = '%sStacked' % widget_type[1], '%s | Stacked (%s) | Category' % (cpath_header, widget_type[0])
 		else: cpath_type, cpath_label = widget_type[1], '%s | %s' % (cpath_header, widget_type[0])
@@ -198,7 +198,6 @@ class CPaths:
 		xml_file = 'special://skin/xml/%s.xml' % item[0]
 		with xbmcvfs.File(xml_file, 'w') as f: f.write(final_format)
 		Thread(target=self.reload_skin).start()
-
 
 def remake_all_cpaths(silent=False):
 	for item in ('movie.widget', 'tvshow.widget'): CPaths(item).remake_widgets()

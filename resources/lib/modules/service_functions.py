@@ -21,7 +21,7 @@ def starting_widgets():
 				if not cpath_setting: continue
 				try: widget_number = cpath_setting.split('.')[2]
 				except: continue
-				list_id = '%s01%s' % ('7' if widget_type == 'movie' else '8', widget_number)
+				list_id = '%s01%s' % ('5' if widget_type == 'movie' else '6', widget_number)
 				first_item = files_get_directory(active_widget['cpath_path'])[0]
 				if not first_item: continue
 				cpath_label, cpath_path = first_item['label'], first_item['file']

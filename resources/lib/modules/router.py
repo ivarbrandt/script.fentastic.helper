@@ -4,7 +4,6 @@ from urllib.parse import parse_qsl
 # from modules.logger import logger
 
 def routing():
-	import xbmc
 	params = dict(parse_qsl(sys.argv[1], keep_blank_values=True))
 	_get = params.get
 	mode = _get('mode', 'check_for_update')
