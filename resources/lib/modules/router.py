@@ -25,6 +25,6 @@ def routing():
 	if mode == 'manage_main_menu_path':
 		from modules.cpath_maker import CPaths
 		return CPaths(_get('cpath_setting')).manage_main_menu_path()
-	if mode == 'remake_all_cpaths':
-		from modules.cpath_maker import remake_all_cpaths
-		return remake_all_cpaths()
+	# if mode == 'remake_all_cpaths':
+	# 	from modules.cpath_maker import remake_all_cpaths
+	# 	return remake_all_cpaths()
