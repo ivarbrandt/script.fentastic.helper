@@ -8,6 +8,7 @@ from modules import xmls
 
 dialog = xbmcgui.Dialog()
 window = xbmcgui.Window(10000)
+Listitem = xbmcgui.ListItem
 max_widgets = 10
 
 settings_path = xbmcvfs.translatePath('special://profile/addon_data/script.fentastic.helper/')
@@ -35,14 +36,12 @@ class CPaths:
 	def connect_database(self):
 		if not xbmcvfs.exists(settings_path): xbmcvfs.mkdir(settings_path)
 		self.dbcon = database.connect(database_path, timeout=20)
-		self.dbcon.execute("""CREATE TABLE IF NOT EXISTS custom_paths
-					(cpath_setting text unique, cpath_path text, cpath_header text, cpath_type text, cpath_label text)""")
+		self.dbcon.execute('CREATE TABLE IF NOT EXISTS custom_paths (cpath_setting text unique, cpath_path text, cpath_header text, cpath_type text, cpath_label text)')
 		self.dbcur = self.dbcon.cursor()
 
 	def add_cpath_to_database(self, cpath_setting, cpath_path, cpath_header, cpath_type, cpath_label):
 		self.refresh_cpaths = True
-		self.dbcur.execute("""INSERT OR REPLACE INTO custom_paths VALUES (?, ?, ?, ?, ?)""",
-							(cpath_setting, cpath_path, cpath_header, cpath_type, cpath_label))
+		self.dbcur.execute('INSERT OR REPLACE INTO custom_paths VALUES (?, ?, ?, ?, ?)', (cpath_setting, cpath_path, cpath_header, cpath_type, cpath_label))
 		self.dbcon.commit()
 
 	def remove_cpath_from_database(self, cpath_setting):
@@ -51,8 +50,7 @@ class CPaths:
 		self.dbcon.commit()
 
 	def fetch_current_cpaths(self):
-		results = self.dbcur.execute(
-			"""SELECT * FROM custom_paths WHERE cpath_setting LIKE %s""" % self.cpath_lookup).fetchall()
+		results = self.dbcur.execute('SELECT * FROM custom_paths WHERE cpath_setting LIKE %s' % self.cpath_lookup).fetchall()
 		try: results.sort(key=lambda k: k[0])
 		except: pass
 		current_dict = {}
@@ -63,28 +61,31 @@ class CPaths:
 			current_dict[key] = data
 		return current_dict
 
-	def path_browser(self, header='', path=default_path):
+	def path_browser(self, label='', file=default_path, thumbnail=''):
 		show_busy_dialog()
-		header = self.clean_header(header)
-		folders = []
-		if path != default_path: folders.append(('Use [B]%s[/B] As Path' % header, 'set_path'))
-		result = files_get_directory(path)
+		label = self.clean_header(label)
+		results = files_get_directory(file)
 		hide_busy_dialog()
-		if result:
-			folders.extend([('%s >>' % i['label'], i['file']) for i in result if i['file'].startswith('plugin://') and i['filetype'] == 'directory'])
-			choice = dialog.select('Choose Path', [i[0] for i in folders])
-			if choice == -1: return None, None
-			choice = folders[choice]
-			if choice[1] == 'set_path': return path, header
-			else: return self.path_browser(choice[0], choice[1])
-		try: dialog.close()
-		except: pass
+		list_items = []
+		if file != default_path:
+			listitem = Listitem('Use [B]%s[/B] As Path' % label, 'Set as Path', offscreen=True)
+			listitem.setArt({'icon': thumbnail})
+			listitem.setProperty('item', json.dumps({'label': label, 'file': file, 'thumbnail': thumbnail}))
+			list_items.append(listitem)
+		for i in results:
+			listitem = Listitem('%s »' % i['label'], 'Browse Path', offscreen=True)
+			listitem.setArt({'icon': i['thumbnail']})
+			listitem.setProperty('item', json.dumps({'label': i['label'], 'file': i['file'], 'thumbnail': i['thumbnail']}))
+			list_items.append(listitem)
+		choice = dialog.select('Choose Path', list_items, useDetails=True)
+		if choice == -1: return {}
+		choice = json.loads(list_items[choice].getProperty('item'))
+		if choice['file'] == file: return choice
+		else: return self.path_browser(**choice)
 
 	def make_main_menu_xml(self, active_cpaths):
 		if not self.refresh_cpaths: return
-		if not active_cpaths:
-			Thread(target=self.reload_skin).start()
-			self.make_default_xml()
+		if not active_cpaths: self.make_default_xml()
 		if self.media_type == 'movie': menu_xml_file, main_menu_xml, key = movies_main_menu_xml, xmls.main_menu_movies_xml, 'movie.main_menu'
 		else: menu_xml_file, main_menu_xml, key = tvshows_main_menu_xml, xmls.main_menu_tvshows_xml, 'tvshow.main_menu'
 		xml_file = 'special://skin/xml/%s.xml' % (menu_xml_file)
@@ -94,9 +95,7 @@ class CPaths:
 
 	def make_widget_xml(self, active_cpaths):
 		if not self.refresh_cpaths: return
-		if not active_cpaths:
-			Thread(target=self.reload_skin).start()
-			self.make_default_xml()
+		if not active_cpaths: self.make_default_xml()
 		xml_file = 'special://skin/xml/%s.xml' % (movies_widgets_xml if self.media_type == 'movie' else tvshows_widgets_xml)
 		list_id = 19010 if self.media_type == 'movie' else 22010
 		final_format = xmls.media_xml_start.format(main_include=self.main_include)
@@ -118,12 +117,12 @@ class CPaths:
 		if active_cpaths:
 			choice = self.manage_action(self.cpath_setting)
 			if choice == 'clear_path':
-				Thread(target=self.reload_skin).start()
 				self.make_default_xml()
 				dialog.ok('FENtastic', 'Path Cleared')
 				return
 			if choice is None: return
-		cpath_path = self.path_browser()[0]
+		result = self.path_browser()
+		cpath_path = result.get('file', None)
 		if not cpath_path: return self.make_main_menu_xml(active_cpaths)
 		self.add_cpath_to_database(self.cpath_setting, cpath_path, '', '', '')
 		self.make_main_menu_xml(self.fetch_current_cpaths())
@@ -139,7 +138,9 @@ class CPaths:
 			choice = self.manage_action(cpath_setting)
 			if choice in ('clear_path', None): return self.manage_widgets()
 		else: cpath_setting = '%s.%s' % (self.cpath_setting, active_cpath_check)
-		cpath_path, default_header = self.path_browser()
+		result = self.path_browser()
+		if not result: return self.manage_widgets()
+		cpath_path, default_header = result.get('file', None), result.get('label', None)
 		if not cpath_path: return self.manage_widgets()
 		cpath_header = self.widget_header(default_header)
 		if not cpath_header: return self.manage_widgets()
@@ -163,19 +164,20 @@ class CPaths:
 		return widget_types[choice]
 
 	def manage_action(self, cpath_setting):
-		choices = [('Clear Current Path', 'clear_path'), ('Remake Path', 'remake_path')]
+		choices = [('Remake Path', 'remake_path'), ('Clear Current Path', 'clear_path')]
 		choice = dialog.select('%s Exists' % self.path_type.capitalize(), [i[0] for i in choices])
 		if choice == -1: return None
 		self.remove_cpath_from_database(cpath_setting)
 		return choices[choice][1]
 
 	def reload_skin(self):
-		if window.getProperty('fen.clear_path_refresh') == 'true': return
-		window.setProperty('fen.clear_path_refresh', 'true')
+		if window.getProperty('fentastic.clear_path_refresh') == 'true': return
+		window.setProperty('fentastic.clear_path_refresh', 'true')
 		while xbmcgui.getCurrentWindowId() == 10035: xbmc.sleep(500)
-		window.setProperty('fen.clear_path_refresh', '')
+		window.setProperty('fentastic.clear_path_refresh', '')
 		xbmc.sleep(200)
 		xbmc.executebuiltin('ReloadSkin()')
+		starting_widgets()
 
 	def clean_header(self, header):
 		return header.replace('[B]', '').replace('[/B]', '').replace(' >>', '')
@@ -199,20 +201,49 @@ class CPaths:
 		with xbmcvfs.File(xml_file, 'w') as f: f.write(final_format)
 		Thread(target=self.reload_skin).start()
 
-def remake_all_cpaths(silent=False):
-	for item in ('movie.widget', 'tvshow.widget'): CPaths(item).remake_widgets()
-	for item in ('movie.main_menu', 'tvshow.main_menu'): CPaths(item).remake_main_menus()
-	if not silent: xbmcgui.Dialog().ok('FENtastic', 'Menus and Widgets Remade')
 
 def files_get_directory(directory, properties=['title', 'file', 'thumbnail']):
-	command = {'jsonrpc': '2.0', 'id': 0, 'method': 'Files.GetDirectory', 'params': {'directory': directory, 'media': 'files', 'properties': properties}}
-	result = get_jsonrpc(command)
-	return result.get('files', None)
+	command = {'jsonrpc': '2.0', 'id': 'plugin.video.fen', 'method': 'Files.GetDirectory', 'params': {'directory': directory, 'media': 'files', 'properties': properties}}
+	try: results = [i for i in get_jsonrpc(command).get('files') if i['file'].startswith('plugin://') and i['filetype'] == 'directory']
+	except: results = None
+	return results
 
 def get_jsonrpc(request):
 	response = xbmc.executeJSONRPC(json.dumps(request))
 	result = json.loads(response)
 	return result.get('result', None)
+
+def remake_all_cpaths(silent=False):
+	for item in ('movie.widget', 'tvshow.widget'): CPaths(item).remake_widgets()
+	for item in ('movie.main_menu', 'tvshow.main_menu'): CPaths(item).remake_main_menus()
+	if not silent: xbmcgui.Dialog().ok('Fentastic', 'Menus and Widgets Remade')
+
+def starting_widgets():
+	window = xbmcgui.Window(10000)
+	window.setProperty('fentastic.starting_widgets', 'finished')
+	for item in ('movie.widget', 'tvshow.widget'):
+		try:
+			active_cpaths = CPaths(item).fetch_current_cpaths()
+			if not active_cpaths: continue
+			widget_type = item.split('.')[0]
+			for count in range(1,11):
+				active_widget = active_cpaths.get(count, {})
+				if not active_widget: continue
+				if not 'Stacked' in active_widget['cpath_label']: continue
+				cpath_setting = active_widget['cpath_setting']
+				if not cpath_setting: continue
+				try: widget_number = cpath_setting.split('.')[2]
+				except: continue
+				list_id = '%s01%s' % ('19' if widget_type == 'movie' else '22', widget_number)
+				try: first_item = files_get_directory(active_widget['cpath_path'])[0]
+				except: continue
+				if not first_item: continue
+				cpath_label, cpath_path = first_item['label'], first_item['file']
+				window.setProperty('fentastic.%s.label' % list_id, cpath_label)
+				window.setProperty('fentastic.%s.path' % list_id, cpath_path)
+		except: pass
+	try: del window
+	except: pass
 
 def show_busy_dialog():
 	return xbmc.executebuiltin('ActivateWindow(busydialognocancel)')

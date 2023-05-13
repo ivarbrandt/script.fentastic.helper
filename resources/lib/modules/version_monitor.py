@@ -1,18 +1,21 @@
 # -*- coding: utf-8 -*-
-import xbmc, xbmcgui, xbmcaddon
+from xbmcgui import Window
+from xbmc import sleep
+from xbmcaddon import Addon
 # from modules.logger import logger
 
-window = xbmcgui.Window(10000)
+window = Window(10000)
 
 def check_for_update(skin_id):
 	property_version = window.getProperty('%s.installed_version' % skin_id)
-	installed_version = xbmcaddon.Addon(id=skin_id).getAddonInfo('version')
+	installed_version = Addon(id=skin_id).getAddonInfo('version')
 	if not property_version: return set_installed_version(skin_id, installed_version)
 	if property_version == installed_version: return
-	from modules.cpath_maker import remake_all_cpaths
+	from modules.cpath_maker import remake_all_cpaths, starting_widgets
 	set_installed_version(skin_id, installed_version)
-	xbmc.sleep(1000)
+	sleep(1000)
 	remake_all_cpaths(silent=True)
+	starting_widgets()
 
 def set_installed_version(skin_id, installed_version):
 	window.setProperty('%s.installed_version' % skin_id, installed_version)
