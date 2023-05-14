@@ -97,7 +97,7 @@ class CPaths:
 		if not self.refresh_cpaths: return
 		if not active_cpaths: self.make_default_xml()
 		xml_file = 'special://skin/xml/%s.xml' % (movies_widgets_xml if self.media_type == 'movie' else tvshows_widgets_xml)
-		list_id = 19010 if self.media_type == 'movie' else 22010
+		list_id = 19009 if self.media_type == 'movie' else 22009
 		final_format = xmls.media_xml_start.format(main_include=self.main_include)
 		for k, v  in active_cpaths.items():
 			cpath_list_id = list_id + k
