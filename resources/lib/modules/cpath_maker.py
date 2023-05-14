@@ -51,7 +51,7 @@ class CPaths:
 
 	def fetch_current_cpaths(self):
 		results = self.dbcur.execute('SELECT * FROM custom_paths WHERE cpath_setting LIKE %s' % self.cpath_lookup).fetchall()
-		try: results.sort(key=lambda k: k[0])
+		try: results.sort(key=lambda k: int(k[0].split('.')[-1]))  
 		except: pass
 		current_dict = {}
 		for item in results:
