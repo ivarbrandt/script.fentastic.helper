@@ -226,15 +226,14 @@ def starting_widgets():
 			active_cpaths = CPaths(item).fetch_current_cpaths()
 			if not active_cpaths: continue
 			widget_type = item.split('.')[0]
+			base_list_id = 19010 if widget_type == 'movie' else 22010
 			for count in range(1,11):
 				active_widget = active_cpaths.get(count, {})
 				if not active_widget: continue
 				if not 'Stacked' in active_widget['cpath_label']: continue
 				cpath_setting = active_widget['cpath_setting']
 				if not cpath_setting: continue
-				try: widget_number = cpath_setting.split('.')[2]
-				except: continue
-				list_id = '%s01%s' % ('19' if widget_type == 'movie' else '22', widget_number)
+				list_id = str(base_list_id + int(cpath_setting.split('.')[2]))
 				try: first_item = files_get_directory(active_widget['cpath_path'])[0]
 				except: continue
 				if not first_item: continue
