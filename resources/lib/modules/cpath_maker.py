@@ -201,7 +201,6 @@ class CPaths:
 		with xbmcvfs.File(xml_file, 'w') as f: f.write(final_format)
 		Thread(target=self.reload_skin).start()
 
-
 def files_get_directory(directory, properties=['title', 'file', 'thumbnail']):
 	command = {'jsonrpc': '2.0', 'id': 'plugin.video.fen', 'method': 'Files.GetDirectory', 'params': {'directory': directory, 'media': 'files', 'properties': properties}}
 	try: results = [i for i in get_jsonrpc(command).get('files') if i['file'].startswith('plugin://') and i['filetype'] == 'directory']
@@ -233,7 +232,8 @@ def starting_widgets():
 				if not 'Stacked' in active_widget['cpath_label']: continue
 				cpath_setting = active_widget['cpath_setting']
 				if not cpath_setting: continue
-				list_id = str(base_list_id + int(cpath_setting.split('.')[2]))
+				try: list_id = base_list_id + int(cpath_setting.split('.')[2])
+				except: continue
 				try: first_item = files_get_directory(active_widget['cpath_path'])[0]
 				except: continue
 				if not first_item: continue
