@@ -29,7 +29,8 @@ def widget_monitor(list_id):
 			if xbmc.getInfoLabel('ListItem.FolderPath') != cpath_path: switch_widget = False
 			if xbmc.getCondVisibility('System.HasActiveModalDialog'): switch_widget = False
 			if xbmcgui.getCurrentWindowId() != 10000: switch_widget = False
-			if display_delay: stack_label_control.setLabel('Loading widget in [COLOR button_focus][B]%0.2f[/B][/COLOR] seconds' % (countdown))
+			widget_label = xbmc.getInfoLabel('ListItem.Label')
+			if display_delay: stack_label_control.setLabel('Loading [COLOR button_focus][B]{}[/B][/COLOR] in [B]%0.2f[/B] seconds'.format(widget_label) % (countdown))
 		if switch_widget:
 			position = int(xbmc.getInfoLabel('Container(%s).Position' % list_id))
 			cpath_label = xbmc.getInfoLabel('ListItem.Label')
@@ -41,12 +42,12 @@ def widget_monitor(list_id):
 			while xbmc.getCondVisibility('Container(%s).IsUpdating' % stack_id) and not update_wait_time > 3:
 				monitor.waitForAbort(0.10)
 				update_wait_time += 0.10
-				monitor.waitForAbort(0.50)
-				try: stack_control.selectItem(0)
-				except: pass
-			else:
-				stack_label_control.setLabel(window.getProperty('fentastic.%s.label' % list_id))
-				monitor.waitForAbort(0.25)
+			monitor.waitForAbort(0.50)
+			try: stack_control.selectItem(0)
+			except: pass
+		else:
+			stack_label_control.setLabel(window.getProperty('fentastic.%s.label' % list_id))
+			monitor.waitForAbort(0.25)
 	try: del monitor
 	except: pass
 	try: del window
