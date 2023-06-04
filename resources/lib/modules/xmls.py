@@ -5,9 +5,9 @@ media_xml_start = '\
 \n<includes>\
 \n    <include name="{main_include}">'
 
-media_xml_end = '\
+media_xml_end = "\
 \n    </include>\
-\n</includes>'
+\n</includes>"
 
 media_xml_body = '\
 \n        <include content="{cpath_type}">\
