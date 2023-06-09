@@ -116,7 +116,7 @@ class CPaths:
         list_items = []
         if file != default_path:
             listitem = Listitem(
-                "Use [B]%s[/B] As Path" % label, "Set as Path", offscreen=True
+                "Use [B]%s[/B] as path" % label, "Set as path", offscreen=True
             )
             listitem.setArt({"icon": thumbnail})
             listitem.setProperty(
@@ -125,7 +125,7 @@ class CPaths:
             )
             list_items.append(listitem)
         for i in results:
-            listitem = Listitem("%s »" % i["label"], "Browse Path", offscreen=True)
+            listitem = Listitem("%s »" % i["label"], "Browse path...", offscreen=True)
             listitem.setArt({"icon": i["thumbnail"]})
             listitem.setProperty(
                 "item",
@@ -138,7 +138,7 @@ class CPaths:
                 ),
             )
             list_items.append(listitem)
-        choice = dialog.select("Choose Path", list_items, useDetails=True)
+        choice = dialog.select("Choose path", list_items, useDetails=True)
         if choice == -1:
             return {}
         choice = json.loads(list_items[choice].getProperty("item"))
@@ -214,10 +214,10 @@ class CPaths:
     def manage_main_menu_path(self):
         active_cpaths = self.fetch_current_cpaths()
         if active_cpaths:
-            choice = self.manage_action(self.cpath_setting)
+            choice = self.manage_action(self.cpath_setting, "main_menu")
             if choice == "clear_path":
                 self.make_default_xml()
-                dialog.ok("FENtastic", "Path Cleared")
+                dialog.ok("FENtastic", "Path cleared")
                 return
             if choice is None:
                 return
@@ -235,7 +235,7 @@ class CPaths:
             % (count, active_cpaths.get(count, {}).get("cpath_label", ""))
             for count in range(1, 11)
         ]
-        choice = dialog.select("Choose Widget", widget_choices)
+        choice = dialog.select("Choose widget", widget_choices)
         if choice == -1:
             return self.make_widget_xml(active_cpaths)
         active_cpath_check = choice + 1
@@ -259,9 +259,11 @@ class CPaths:
         if not widget_type:
             return self.manage_widgets()
         if widget_type[0] == "Category" and dialog.yesno(
-            "Stacked Widget", "Make [B]%s[/B] a Stacked Widget?" % cpath_header
+            "Stacked widget",
+            "Make [COLOR button_focus][B]%s[/B][/COLOR] a stacked widget?"
+            % cpath_header,
         ):
-            widget_type = self.widget_type(label="Choose Stacked Widget Type")
+            widget_type = self.widget_type(label="Choose stacked widget display type")
             if not widget_type:
                 return self.manage_widgets()
             cpath_type, cpath_label = "%sStacked" % widget_type[
@@ -278,24 +280,124 @@ class CPaths:
         return self.manage_widgets()
 
     def widget_header(self, default_header):
-        header = dialog.input("Label", defaultt=default_header)
+        header = dialog.input("Set widget label", defaultt=default_header)
         return header or None
 
-    def widget_type(self, label="Choose Type", type_limit=4):
+    def widget_type(self, label="Choose widget display type", type_limit=4):
         choice = dialog.select(label, [i[0] for i in widget_types[0:type_limit]])
         if choice == -1:
             return None
         return widget_types[choice]
 
-    def manage_action(self, cpath_setting):
-        choices = [("Remake Path", "remake_path"), ("Clear Current Path", "clear_path")]
+    def get_total_widgets(self):
+        self.dbcur.execute("SELECT COUNT(*) FROM custom_paths")
+        total_widgets = self.dbcur.fetchone()[0]
+        return total_widgets
+
+    def manage_action(self, cpath_setting, context="widget"):
+        if context == "widget":
+            choices = [
+                ("Move up", "move_up"),
+                ("Move down", "move_down"),
+                ("Remake", "remake_path"),
+                ("Delete", "clear_path"),
+            ]
+        elif context == "main_menu":
+            choices = [("Remake", "remake_path"), ("Delete", "clear_path")]
         choice = dialog.select(
-            "%s Exists" % self.path_type.capitalize(), [i[0] for i in choices]
+            "%s options" % self.path_type.capitalize(), [i[0] for i in choices]
         )
         if choice == -1:
             return None
-        self.remove_cpath_from_database(cpath_setting)
-        return choices[choice][1]
+        action = choices[choice][1]
+        if action == "move_up" or action == "move_down":
+            if context != "widget":
+                dialog.ok(
+                    "FENtastic", "Move up and Move down options are not available here"
+                )
+                return None
+            # Split the cpath_setting into parts
+            parts = cpath_setting.split(".")
+            current_order = int(parts[-1])
+            total_widgets = self.get_total_widgets()
+            if len(parts) < 3 or not parts[-1].isdigit():
+                dialog.ok("FENtastic", "Cannot move this widget")
+                return None
+            # Check to see if the widget is already at the top or bottom
+            if current_order == 1 and action == "move_up":
+                dialog.ok("FENtastic", "Widget is already at the top")
+                return None
+            elif current_order == total_widgets and action == "move_down":
+                dialog.ok("FENtastic", "Widget is already at the bottom")
+                return None
+            # Get the current widget order and calculate the new widget order
+            current_order = int(parts[-1])
+            new_order = current_order - 1 if action == "move_up" else current_order + 1
+            # Create the cpath_setting values for the current and adjacent widget
+            current_widget = f"{parts[0]}.{parts[1]}.{current_order}"
+            adjacent_widget = f"{parts[0]}.{parts[1]}.{new_order}"
+            # Swap the order of the widgets in the database
+            self.refresh_cpaths = True
+            self.dbcur.execute(
+                "UPDATE custom_paths SET cpath_setting = ? WHERE cpath_setting = ?",
+                (f"{parts[0]}.{parts[1]}.temp", current_widget),
+            )
+            self.dbcur.execute(
+                "UPDATE custom_paths SET cpath_setting = ? WHERE cpath_setting = ?",
+                (current_widget, adjacent_widget),
+            )
+            self.dbcur.execute(
+                "UPDATE custom_paths SET cpath_setting = ? WHERE cpath_setting = ?",
+                (adjacent_widget, f"{parts[0]}.{parts[1]}.temp"),
+            )
+            self.dbcon.commit()
+        elif action == "remake_path":
+            if context == "widget":
+                self.remove_cpath_from_database(cpath_setting)
+                result = self.path_browser()
+                if result:
+                    cpath_path, default_header = result.get("file", None), result.get(
+                        "label", None
+                    )
+                    cpath_header = self.widget_header(default_header)
+                    widget_type = self.widget_type()
+                    if widget_type[0] == "Category" and dialog.yesno(
+                        "Stacked widget",
+                        "Make [COLOR button_focus][B]%s[/B][/COLOR] a stacked widget?"
+                        % cpath_header,
+                    ):
+                        widget_type = self.widget_type(
+                            label="Choose stacked widget display type"
+                        )
+                        cpath_type, cpath_label = "%sStacked" % widget_type[
+                            1
+                        ], "%s | Stacked (%s) | Category" % (
+                            cpath_header,
+                            widget_type[0],
+                        )
+                    else:
+                        cpath_type, cpath_label = widget_type[1], "%s | %s" % (
+                            cpath_header,
+                            widget_type[0],
+                        )
+                    self.add_cpath_to_database(
+                        cpath_setting, cpath_path, cpath_header, cpath_type, cpath_label
+                    )
+            elif context == "main_menu":
+                self.remove_cpath_from_database(cpath_setting)
+                result = self.path_browser()
+                if result:
+                    cpath_path = result.get("file", None)
+                    self.add_cpath_to_database(cpath_setting, cpath_path, "", "", "")
+                    self.make_main_menu_xml(self.fetch_current_cpaths())
+        elif action == "clear_path":
+            if context == "widget":
+                self.remove_cpath_from_database(cpath_setting)
+            if context == "main_menu":
+                self.remove_cpath_from_database(cpath_setting)
+                self.make_default_xml()
+                dialog.ok("FENtastic", "Path cleared")
+        return None
 
     def reload_skin(self):
         if window.getProperty("fentastic.clear_path_refresh") == "true":
@@ -366,7 +468,7 @@ def remake_all_cpaths(silent=False):
     for item in ("movie.main_menu", "tvshow.main_menu"):
         CPaths(item).remake_main_menus()
     if not silent:
-        xbmcgui.Dialog().ok("Fentastic", "Menus and Widgets Remade")
+        xbmcgui.Dialog().ok("FENtastic", "Menus and widgets remade")
 
 
 def starting_widgets():
