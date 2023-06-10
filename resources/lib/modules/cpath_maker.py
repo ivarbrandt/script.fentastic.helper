@@ -346,7 +346,11 @@ class CPaths:
             ("Delete", "clear_path"),
         ]
         if context == "widget":
-            choices = [("Move up", "move_up"), ("Move down", "move_down")] + choices
+            choices = [
+                ("Move up", "move_up"),
+                ("Move down", "move_down"),
+                ("Type", "display_type"),
+            ] + choices
         choice = dialog.select(
             "%s options" % self.path_type.capitalize(), [i[0] for i in choices]
         )
@@ -418,6 +422,46 @@ class CPaths:
                     cpath_setting, cpath_path, cpath_header, "", ""
                 )
                 self.make_main_menu_xml(self.fetch_current_cpaths())
+
+        elif action == "display_type":
+            result = self.fetch_one_cpath(cpath_setting)
+            if not result:
+                return None
+            cpath_path = result.get("cpath_path", None)
+            cpath_header = result.get("cpath_header", None)
+            cpath_label = result.get("cpath_label", None)
+            if not cpath_path:
+                return None
+            widget_type = self.widget_type()
+            if not widget_type:
+                return None
+            if widget_type[0] == "Category":
+                if dialog.yesno(
+                    "Stacked widget",
+                    "Make [COLOR button_focus][B]%s[/B][/COLOR] a stacked widget?"
+                    % cpath_header,
+                ):
+                    widget_type = self.widget_type(
+                        label="Choose stacked widget display type"
+                    )
+                    if not widget_type:
+                        return None
+                    cpath_type, cpath_label = "%sStacked" % widget_type[
+                        1
+                    ], "%s | Stacked (%s) | Category" % (cpath_header, widget_type[0])
+                else:
+                    cpath_type, cpath_label = widget_type[1], "%s | %s" % (
+                        cpath_header,
+                        widget_type[0],
+                    )
+            else:
+                cpath_type, cpath_label = widget_type[1], "%s | %s" % (
+                    cpath_header,
+                    widget_type[0],
+                )
+            self.update_cpath_in_database(
+                cpath_setting, cpath_path, cpath_header, cpath_type, cpath_label
+            )
 
         elif action == "clear_path":
             self.remove_cpath_from_database(cpath_setting)
