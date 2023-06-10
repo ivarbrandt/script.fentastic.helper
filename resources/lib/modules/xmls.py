@@ -36,7 +36,7 @@ main_menu_movies_xml = '\
 \n<includes>\
 \n    <include name="MoviesMainMenu">\
 \n        <item>\
-\n            <label>$LOCALIZE[342]</label>\
+\n            <label>{cpath_header}</label>\
 \n            <onclick>ActivateWindow(Videos,{main_menu_path},return)</onclick>\
 \n            <property name="menu_id">$NUMBER[19000]</property>\
 \n            <thumb>icons/sidemenu/movies.png</thumb>\
@@ -51,7 +51,7 @@ main_menu_tvshows_xml = '\
 \n<includes>\
 \n    <include name="TVShowsMainMenu">\
 \n        <item>\
-\n            <label>Shows</label>\
+\n            <label>{cpath_header}</label>\
 \n            <onclick>ActivateWindow(Videos,{main_menu_path},return)</onclick>\
 \n            <property name="menu_id">$NUMBER[22000]</property>\
 \n            <thumb>icons/sidemenu/tv.png</thumb>\

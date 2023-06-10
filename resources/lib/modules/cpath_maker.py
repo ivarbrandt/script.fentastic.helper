@@ -346,8 +346,8 @@ class CPaths:
         tvshow_cpath = self.fetch_one_cpath("tvshow.main_menu")
         movie_cpath_header = movie_cpath.get("cpath_header") if movie_cpath else None
         tvshow_cpath_header = tvshow_cpath.get("cpath_header") if tvshow_cpath else None
-        default_movie_string_id = 342  # replace with actual string id
-        default_tvshow_string_id = 20343  # replace with actual string id
+        default_movie_string_id = 342
+        default_tvshow_string_id = 20343
         default_movie_value = (
             xbmc.getLocalizedString(default_movie_string_id)
             if not movie_cpath_header
@@ -393,7 +393,6 @@ class CPaths:
                 return None
             new_order = current_order - 1 if action == "move_up" else current_order + 1
             self.swap_widgets(parts, current_order, new_order)
-
         elif action == "remake_path":
             self.remove_cpath_from_database(cpath_setting)
             result = self.path_browser()
@@ -410,10 +409,7 @@ class CPaths:
                         cpath_setting, cpath_path, cpath_header, "", ""
                     )
                     self.make_main_menu_xml(self.fetch_current_cpaths())
-                    xbmc.executebuiltin(
-                        "Skin.SetString(HomeMenuCustomMoviesButton,%s)" % cpath_header
-                    )
-
+                    dialog.ok("FENtastic", "Main menu remade")
         elif action == "rename_path":
             result = self.fetch_one_cpath(cpath_setting)
             if not result:
@@ -447,7 +443,6 @@ class CPaths:
                     cpath_setting, cpath_path, cpath_header, "", ""
                 )
                 self.make_main_menu_xml(self.fetch_current_cpaths())
-
         elif action == "display_type":
             result = self.fetch_one_cpath(cpath_setting)
             if not result:
@@ -487,7 +482,6 @@ class CPaths:
             self.update_cpath_in_database(
                 cpath_setting, cpath_path, cpath_header, cpath_type, cpath_label
             )
-
         elif action == "clear_path":
             self.remove_cpath_from_database(cpath_setting)
             if context == "main_menu":
