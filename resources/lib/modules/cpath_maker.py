@@ -4,6 +4,7 @@ import json
 import sqlite3 as database
 from threading import Thread
 from modules import xmls
+from xbmc import getLocalizedString
 
 # from modules.logger import logger
 
@@ -200,6 +201,7 @@ class CPaths:
         if not "&amp;" in final_format:
             final_format = final_format.replace("&", "&amp;")
         self.write_xml(xml_file, final_format)
+        self.update_skin_strings()
 
     def make_widget_xml(self, active_cpaths):
         if not self.refresh_cpaths:
@@ -282,6 +284,7 @@ class CPaths:
             if not cpath_header:
                 return None
             self.add_cpath_to_database(cpath_setting, cpath_path, cpath_header, "", "")
+            self.update_skin_strings()
         return True
 
     def manage_action_and_check(self, cpath_setting, context):
@@ -339,6 +342,30 @@ class CPaths:
             return None
         return widget_types[choice]
 
+    def update_skin_strings(self):
+        movie_cpath = self.fetch_one_cpath("movie.main_menu")
+        tvshow_cpath = self.fetch_one_cpath("tvshow.main_menu")
+
+        movie_cpath_header = movie_cpath.get("cpath_header") if movie_cpath else None
+        tvshow_cpath_header = tvshow_cpath.get("cpath_header") if tvshow_cpath else None
+
+        default_movie_string_id = 342  # replace with actual string id
+        default_tvshow_string_id = 20343  # replace with actual string id
+
+        default_movie_value = (
+            xbmc.getLocalizedString(default_movie_string_id)
+            if not movie_cpath_header
+            else movie_cpath_header
+        )
+        default_tvshow_value = (
+            xbmc.getLocalizedString(default_tvshow_string_id)
+            if not tvshow_cpath_header
+            else tvshow_cpath_header
+        )
+
+        xbmc.executebuiltin("Skin.SetString(MenuMovieLabel,%s)" % default_movie_value)
+        xbmc.executebuiltin("Skin.SetString(MenuTVShowLabel,%s)" % default_tvshow_value)
+
     def manage_action(self, cpath_setting, context="widget"):
         choices = [
             ("Rename", "rename_path"),
@@ -388,6 +415,9 @@ class CPaths:
                         cpath_setting, cpath_path, cpath_header, "", ""
                     )
                     self.make_main_menu_xml(self.fetch_current_cpaths())
+                    xbmc.executebuiltin(
+                        "Skin.SetString(HomeMenuCustomMoviesButton,%s)" % cpath_header
+                    )
 
         elif action == "rename_path":
             result = self.fetch_one_cpath(cpath_setting)
@@ -546,6 +576,7 @@ class CPaths:
         xml_file = "special://skin/xml/%s.xml" % item[0]
         with xbmcvfs.File(xml_file, "w") as f:
             f.write(final_format)
+        self.update_skin_strings()
         Thread(target=self.reload_skin).start()
 
 
