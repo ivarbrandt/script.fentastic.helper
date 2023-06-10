@@ -166,7 +166,8 @@ class CPaths:
             )
         xml_file = "special://skin/xml/%s.xml" % (menu_xml_file)
         final_format = main_menu_xml.format(
-            main_menu_path=active_cpaths[key]["cpath_path"]
+            main_menu_path=active_cpaths[key]["cpath_path"],
+            cpath_header=active_cpaths[key].get("cpath_header", ""),
         )
         if not "&amp;" in final_format:
             final_format = final_format.replace("&", "&amp;")
@@ -248,7 +249,11 @@ class CPaths:
                 cpath_setting, cpath_path, cpath_header, cpath_type, cpath_label
             )
         else:  # context == 'main_menu'
-            self.add_cpath_to_database(cpath_setting, cpath_path, "", "", "")
+            default_header = result.get("label", None)
+            cpath_header = self.main_menu_header(default_header)
+            if not cpath_header:
+                return None
+            self.add_cpath_to_database(cpath_setting, cpath_path, cpath_header, "", "")
         return True
 
     def manage_action_and_check(self, cpath_setting, context):
@@ -296,6 +301,10 @@ class CPaths:
         header = dialog.input("Set widget label", defaultt=default_header)
         return header or None
 
+    def main_menu_header(self, default_header):
+        header = dialog.input("Set Main Menu label", defaultt=default_header)
+        return header or None
+
     def widget_type(self, label="Choose widget display type", type_limit=4):
         choice = dialog.select(label, [i[0] for i in widget_types[0:type_limit]])
         if choice == -1:
@@ -341,7 +350,13 @@ class CPaths:
                 if context == "widget":
                     self.handle_widget_remake(result, cpath_setting)
                 elif context == "main_menu":
-                    self.add_cpath_to_database(cpath_setting, cpath_path, "", "", "")
+                    default_header = result.get("label", None)
+                    cpath_header = self.main_menu_header(default_header)
+                    if not cpath_header:
+                        return None
+                    self.add_cpath_to_database(
+                        cpath_setting, cpath_path, cpath_header, "", ""
+                    )
                     self.make_main_menu_xml(self.fetch_current_cpaths())
         elif action == "clear_path":
             self.remove_cpath_from_database(cpath_setting)
