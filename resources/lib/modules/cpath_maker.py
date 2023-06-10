@@ -77,6 +77,20 @@ class CPaths:
         )
         self.dbcon.commit()
 
+    def update_cpath_in_database(
+        self, cpath_setting, cpath_path, cpath_header, cpath_type, cpath_label
+    ):
+        self.refresh_cpaths = True
+        self.dbcur.execute(
+            """
+            UPDATE custom_paths
+            SET cpath_path = ?, cpath_header = ?, cpath_type = ?, cpath_label = ?
+            WHERE cpath_setting = ?
+        """,
+            (cpath_path, cpath_header, cpath_type, cpath_label, cpath_setting),
+        )
+        self.dbcon.commit()
+
     def remove_cpath_from_database(self, cpath_setting):
         self.refresh_cpaths = True
         self.dbcur.execute(
@@ -107,6 +121,20 @@ class CPaths:
             }
             current_dict[key] = data
         return current_dict
+
+    def fetch_one_cpath(self, cpath_setting):
+        result = self.dbcur.execute(
+            "SELECT * FROM custom_paths WHERE cpath_setting = ?", (cpath_setting,)
+        ).fetchone()
+        if result is None:
+            return None
+        return {
+            "cpath_setting": result[0],
+            "cpath_path": result[1],
+            "cpath_header": result[2],
+            "cpath_type": result[3],
+            "cpath_label": result[4],
+        }
 
     def path_browser(self, label="", file=default_path, thumbnail=""):
         show_busy_dialog()
@@ -311,13 +339,12 @@ class CPaths:
             return None
         return widget_types[choice]
 
-    # def get_total_widgets(self):
-    #     self.dbcur.execute("SELECT COUNT(*) FROM custom_paths")
-    #     total_widgets = self.dbcur.fetchone()[0]
-    #     return total_widgets
-
     def manage_action(self, cpath_setting, context="widget"):
-        choices = [("Remake", "remake_path"), ("Delete", "clear_path")]
+        choices = [
+            ("Rename", "rename_path"),
+            ("Remake", "remake_path"),
+            ("Delete", "clear_path"),
+        ]
         if context == "widget":
             choices = [("Move up", "move_up"), ("Move down", "move_down")] + choices
         choice = dialog.select(
@@ -329,14 +356,13 @@ class CPaths:
         if action in ["move_up", "move_down"]:
             parts = cpath_setting.split(".")
             current_order = int(parts[-1])
-            total_widgets = 10
             if len(parts) < 3 or not parts[-1].isdigit():
                 dialog.ok("FENtastic", "Cannot move this widget")
                 return None
             if current_order == 1 and action == "move_up":
                 dialog.ok("FENtastic", "Widget is already at the top")
                 return None
-            elif current_order == total_widgets and action == "move_down":
+            elif current_order == max_widgets and action == "move_down":
                 dialog.ok("FENtastic", "Widget is already at the bottom")
                 return None
             new_order = current_order - 1 if action == "move_up" else current_order + 1
@@ -358,6 +384,41 @@ class CPaths:
                         cpath_setting, cpath_path, cpath_header, "", ""
                     )
                     self.make_main_menu_xml(self.fetch_current_cpaths())
+
+        elif action == "rename_path":
+            result = self.fetch_one_cpath(cpath_setting)
+            if not result:
+                return None
+            cpath_path = result.get("cpath_path", None)
+            cpath_type = result.get("cpath_type", None)
+            cpath_label = result.get("cpath_label", None)
+            if not cpath_path:
+                return None
+            default_header = result.get("cpath_header", None)
+            if context == "widget":
+                cpath_header = self.widget_header(default_header)
+                if not cpath_header:
+                    return None
+                cpath_label = "%s | %s" % (
+                    cpath_header,
+                    result["cpath_type"].split("Stacked")[0].strip(),
+                )
+                self.update_cpath_in_database(
+                    cpath_setting,
+                    cpath_path,
+                    cpath_header,
+                    result["cpath_type"],
+                    cpath_label,
+                )
+            if context == "main_menu":
+                cpath_header = self.main_menu_header(default_header)
+                if not cpath_header:
+                    return None
+                self.update_cpath_in_database(
+                    cpath_setting, cpath_path, cpath_header, "", ""
+                )
+                self.make_main_menu_xml(self.fetch_current_cpaths())
+
         elif action == "clear_path":
             self.remove_cpath_from_database(cpath_setting)
             if context == "main_menu":
