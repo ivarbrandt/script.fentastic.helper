@@ -4,7 +4,6 @@ import json
 import sqlite3 as database
 from threading import Thread
 from modules import xmls
-from xbmc import getLocalizedString
 
 # from modules.logger import logger
 
@@ -345,13 +344,10 @@ class CPaths:
     def update_skin_strings(self):
         movie_cpath = self.fetch_one_cpath("movie.main_menu")
         tvshow_cpath = self.fetch_one_cpath("tvshow.main_menu")
-
         movie_cpath_header = movie_cpath.get("cpath_header") if movie_cpath else None
         tvshow_cpath_header = tvshow_cpath.get("cpath_header") if tvshow_cpath else None
-
         default_movie_string_id = 342  # replace with actual string id
         default_tvshow_string_id = 20343  # replace with actual string id
-
         default_movie_value = (
             xbmc.getLocalizedString(default_movie_string_id)
             if not movie_cpath_header
@@ -362,7 +358,6 @@ class CPaths:
             if not tvshow_cpath_header
             else tvshow_cpath_header
         )
-
         xbmc.executebuiltin("Skin.SetString(MenuMovieLabel,%s)" % default_movie_value)
         xbmc.executebuiltin("Skin.SetString(MenuTVShowLabel,%s)" % default_tvshow_value)
 
@@ -370,7 +365,7 @@ class CPaths:
         choices = [
             ("Rename", "rename_path"),
             ("Remake", "remake_path"),
-            ("Delete", "clear_path"),
+            ("Remove", "clear_path"),
         ]
         if context == "widget":
             choices = [
