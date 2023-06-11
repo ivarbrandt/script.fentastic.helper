@@ -311,6 +311,12 @@ class CPaths:
         header = dialog.input("Set Main Menu label", defaultt=default_header)
         return header or None
 
+    def get_widget_type(self, cpath_type):
+        for widget_type, widget_list_type in widget_types:
+            if widget_list_type == cpath_type:
+                return widget_type
+        return None
+
     def widget_type(self, label="Choose widget display type", type_limit=4):
         choice = dialog.select(label, [i[0] for i in widget_types[0:type_limit]])
         if choice == -1:
@@ -347,7 +353,7 @@ class CPaths:
             choices = [
                 ("Move up", "move_up"),
                 ("Move down", "move_down"),
-                ("Type", "display_type"),
+                ("Display type", "display_type"),
             ] + choices
         choice = dialog.select(
             "%s options" % self.path_type.capitalize(), [i[0] for i in choices]
@@ -400,10 +406,10 @@ class CPaths:
                 cpath_header = self.widget_header(default_header)
                 if not cpath_header:
                     return None
-                cpath_label = "%s | %s" % (
-                    cpath_header,
-                    result["cpath_type"].split("Stacked")[0].strip(),
-                )
+                widget_type = self.get_widget_type(result["cpath_type"])
+                if not widget_type:
+                    return None
+                cpath_label = "%s | %s" % (cpath_header, widget_type)
                 self.update_cpath_in_database(
                     cpath_setting,
                     cpath_path,
