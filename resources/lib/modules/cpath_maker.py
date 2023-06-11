@@ -437,8 +437,13 @@ class CPaths:
                 )
             if context == "main_menu":
                 cpath_header = self.main_menu_header(default_header)
-                if not cpath_header:
-                    return None
+                if not cpath_header or cpath_header.strip() == "":
+                    if cpath_setting == "movie.main_menu":
+                        cpath_header = xbmc.getLocalizedString(342)
+                    elif cpath_setting == "tvshow.main_menu":
+                        cpath_header = xbmc.getLocalizedString(20343)
+                    else:
+                        cpath_header = "Default Main Menu Header"
                 self.update_cpath_in_database(
                     cpath_setting, cpath_path, cpath_header, "", ""
                 )
