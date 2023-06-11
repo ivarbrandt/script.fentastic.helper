@@ -248,37 +248,13 @@ class CPaths:
         cpath_path = result.get("file", None)
         if not cpath_path:
             return None
+        default_header = result.get("label", None)
         if context == "widget":
-            default_header = result.get("label", None)
             cpath_header = self.widget_header(default_header)
             if not cpath_header:
                 return None
-            widget_type = self.widget_type()
-            if not widget_type:
-                return None
-            if widget_type[0] == "Category" and dialog.yesno(
-                "Stacked widget",
-                "Make [COLOR button_focus][B]%s[/B][/COLOR] a stacked widget?"
-                % cpath_header,
-            ):
-                widget_type = self.widget_type(
-                    label="Choose stacked widget display type"
-                )
-                if not widget_type:
-                    return None
-                cpath_type, cpath_label = "%sStacked" % widget_type[
-                    1
-                ], "%s | Stacked (%s) | Category" % (cpath_header, widget_type[0])
-            else:
-                cpath_type, cpath_label = widget_type[1], "%s | %s" % (
-                    cpath_header,
-                    widget_type[0],
-                )
-            self.add_cpath_to_database(
-                cpath_setting, cpath_path, cpath_header, cpath_type, cpath_label
-            )
+            self.create_and_update_widget(cpath_setting, cpath_path, cpath_header)
         else:  # context == 'main_menu'
-            default_header = result.get("label", None)
             cpath_header = self.main_menu_header(default_header)
             if not cpath_header:
                 return None
@@ -457,35 +433,8 @@ class CPaths:
             cpath_label = result.get("cpath_label", None)
             if not cpath_path:
                 return None
-            widget_type = self.widget_type()
-            if not widget_type:
-                return None
-            if widget_type[0] == "Category":
-                if dialog.yesno(
-                    "Stacked widget",
-                    "Make [COLOR button_focus][B]%s[/B][/COLOR] a stacked widget?"
-                    % cpath_header,
-                ):
-                    widget_type = self.widget_type(
-                        label="Choose stacked widget display type"
-                    )
-                    if not widget_type:
-                        return None
-                    cpath_type, cpath_label = "%sStacked" % widget_type[
-                        1
-                    ], "%s | Stacked (%s) | Category" % (cpath_header, widget_type[0])
-                else:
-                    cpath_type, cpath_label = widget_type[1], "%s | %s" % (
-                        cpath_header,
-                        widget_type[0],
-                    )
-            else:
-                cpath_type, cpath_label = widget_type[1], "%s | %s" % (
-                    cpath_header,
-                    widget_type[0],
-                )
-            self.update_cpath_in_database(
-                cpath_setting, cpath_path, cpath_header, cpath_type, cpath_label
+            self.create_and_update_widget(
+                cpath_setting, cpath_path, cpath_header, add_to_db=False
             )
         elif action == "clear_path":
             self.remove_cpath_from_database(cpath_setting)
@@ -515,6 +464,11 @@ class CPaths:
     def handle_widget_remake(self, result, cpath_setting):
         cpath_path, default_header = result.get("file", None), result.get("label", None)
         cpath_header = self.widget_header(default_header)
+        self.create_and_update_widget(cpath_setting, cpath_path, cpath_header)
+
+    def create_and_update_widget(
+        self, cpath_setting, cpath_path, cpath_header, add_to_db=True
+    ):
         widget_type = self.widget_type()
         if widget_type[0] == "Category" and dialog.yesno(
             "Stacked widget",
@@ -530,9 +484,14 @@ class CPaths:
                 cpath_header,
                 widget_type[0],
             )
-        self.add_cpath_to_database(
-            cpath_setting, cpath_path, cpath_header, cpath_type, cpath_label
-        )
+        if add_to_db:
+            self.add_cpath_to_database(
+                cpath_setting, cpath_path, cpath_header, cpath_type, cpath_label
+            )
+        else:
+            self.update_cpath_in_database(
+                cpath_setting, cpath_path, cpath_header, cpath_type, cpath_label
+            )
 
     def reload_skin(self):
         if window.getProperty("fentastic.clear_path_refresh") == "true":
