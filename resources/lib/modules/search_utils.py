@@ -15,7 +15,6 @@ def get_search_input():
 def main():
     if "get_search_input" in sys.argv:
         get_search_input()
-    # Existing code...
 
 
 if __name__ == "__main__":
