@@ -43,3 +43,8 @@ def routing():
         from modules.cpath_maker import remake_all_cpaths
 
         return remake_all_cpaths()
+
+    if mode == "get_search_input":
+        from modules.search_utils import get_search_input
+
+        return get_search_input()
