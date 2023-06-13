@@ -45,6 +45,7 @@ def routing():
         return remake_all_cpaths()
 
     if mode == "search_input":
-        from modules.search_utils import search_input
+        from modules.search_utils import SPaths
 
-        return search_input()
+        s_paths = SPaths()
+        return s_paths.search_input()
