@@ -1,21 +1,15 @@
-import xbmc
+# -*- coding: utf-8 -*-
+
+import xbmc, xbmcgui
 import sqlite3 as database
-import sys
 
 
-def get_search_input():
-    keyboard = xbmc.Keyboard("", "Search", False)
+def search_input():
+    prompt = "Search" if xbmcgui.getCurrentWindowId() == 10000 else "New search"
+    keyboard = xbmc.Keyboard("", prompt, False)
     keyboard.doModal()
     if keyboard.isConfirmed() and keyboard.getText():
         search_input = keyboard.getText()
         xbmc.executebuiltin(f"Skin.SetString(SearchInput,{search_input})")
-        xbmc.executebuiltin("ActivateWindow(1121)")
-
-
-def main():
-    if "get_search_input" in sys.argv:
-        get_search_input()
-
-
-if __name__ == "__main__":
-    main()
+        if xbmcgui.getCurrentWindowId() == 10000:
+            xbmc.executebuiltin("ActivateWindow(1121)")
