@@ -47,5 +47,14 @@ def routing():
     if mode == "search_input":
         from modules.search_utils import SPaths
 
-        s_paths = SPaths()
-        return s_paths.search_input()
+        return SPaths().search_input()
+
+    if mode == "remove_all_spaths":
+        from modules.search_utils import SPaths
+
+        return SPaths().remove_all_spaths()
+
+    if mode == "re_search":
+        from modules.search_utils import SPaths
+
+    return SPaths().re_search()

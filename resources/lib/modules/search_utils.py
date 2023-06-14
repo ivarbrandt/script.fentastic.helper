@@ -41,11 +41,17 @@ class SPaths:
         self.dbcur.execute("DELETE FROM spath WHERE spath_id = ?", (spath_id,))
         self.dbcon.commit()
 
-    def delete_all_spaths(self):
-        self.refresh_spaths = True
-        self.dbcur.execute("DELETE FROM spath")
-        self.dbcur.execute("DELETE FROM sqlite_sequence WHERE name='spath'")
-        self.dbcon.commit()
+    def remove_all_spaths(self):
+        dialog = xbmcgui.Dialog()
+        title = "FENtastic"
+        prompt = "Are you sure you want to clear all search history? Once cleared, these items cannot be recovered. Proceed?"
+        self.fetch_all_spaths()
+        if dialog.yesno(title, prompt):
+            self.refresh_spaths = True
+            self.dbcur.execute("DELETE FROM spath")
+            self.dbcur.execute("DELETE FROM sqlite_sequence WHERE name='spath'")
+            self.dbcon.commit()
+            dialog.ok("FENtastic", "Search history cleared")
 
     def fetch_all_spaths(self):
         results = self.dbcur.execute(
@@ -55,18 +61,34 @@ class SPaths:
 
     def check_spath_exists(self, spath):
         result = self.dbcur.execute(
-            "SELECT * FROM spath WHERE spath = ?", (spath,)
+            "SELECT spath_id FROM spath WHERE spath = ?", (spath,)
         ).fetchone()
-        return result is not None
+        return result[0] if result else None
 
-    def search_input(self):
-        prompt = "Search" if xbmcgui.getCurrentWindowId() == 10000 else "New search"
-        keyboard = xbmc.Keyboard("", prompt, False)
-        keyboard.doModal()
-        if keyboard.isConfirmed() and keyboard.getText():
-            search_input = keyboard.getText()
-            xbmc.executebuiltin(f"Skin.SetString(SearchInput,{search_input})")
-            if xbmcgui.getCurrentWindowId() == 10000:
-                xbmc.executebuiltin("ActivateWindow(1121)")
-            if not self.check_spath_exists(search_input):
-                self.add_spath_to_database(search_input)
+    def search_input(self, search_term=None):
+        if search_term is None or not search_term.strip():
+            prompt = "Search" if xbmcgui.getCurrentWindowId() == 10000 else "New search"
+            keyboard = xbmc.Keyboard("", prompt, False)
+            keyboard.doModal()
+            if keyboard.isConfirmed():
+                search_term = keyboard.getText()
+                if not search_term or not search_term.strip():
+                    return
+            else:
+                return
+        xbmc.executebuiltin(f"Skin.SetString(SearchInput,{search_term})")
+        if xbmcgui.getCurrentWindowId() == 10000:
+            xbmc.executebuiltin("ActivateWindow(1121)")
+        # else:
+        #     xbmc.executebuiltin("ReloadSkin()")
+
+        existing_spath = self.check_spath_exists(search_term)
+        if existing_spath:
+            self.remove_spath_from_database(existing_spath)
+        self.add_spath_to_database(search_term)
+
+    def re_search(self):
+        search_term = xbmc.getInfoLabel("ListItem.Label")
+        print("Here is the search term", search_term)
+        self.search_input(search_term)
+        # xbmc.executebuiltin("ReloadSkin()")
