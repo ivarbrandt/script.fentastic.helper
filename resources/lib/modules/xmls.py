@@ -17,6 +17,13 @@ media_xml_body = '\
 \n            <param name="list_id" value="{cpath_list_id}"/>\
 \n        </include>'
 
+history_xml_body = "\
+\n        <item>\
+\n            <label>{spath}</label>\
+\n            <onclick>RunScript(script.fentastic.helper,mode=re_search)</onclick>\
+\n        </item>"
+
+
 stacked_media_xml_body = '\
 \n        <include content="WidgetListCategoryStacked">\
 \n            <param name="content_path" value="{cpath_path}"/>\
@@ -61,6 +68,17 @@ main_menu_tvshows_xml = '\
 \n    </include>\
 \n</includes>'
 
+search_history_xml = '\
+<?xml version="1.0" encoding="UTF-8"?>\
+\n<includes>\
+\n    <include name="SearchHistory">\
+\n        <item>\
+\n            <label>{spath}</label>\
+\n            <onclick>RunScript(script.fentastic.helper,mode=re_search)</onclick>\
+\n        </item>\
+\n    </include>\
+\n</includes>'
+
 default_widget = '\
 <?xml version="1.0" encoding="UTF-8"?>\
 \n<includes>\
@@ -69,6 +87,13 @@ default_widget = '\
 \n</includes>'
 
 default_main_menu = '\
+<?xml version="1.0" encoding="UTF-8"?>\
+\n<includes>\
+\n    <include name="{includes_type}">\
+\n    </include>\
+\n</includes>'
+
+default_history = '\
 <?xml version="1.0" encoding="UTF-8"?>\
 \n<includes>\
 \n    <include name="{includes_type}">\
