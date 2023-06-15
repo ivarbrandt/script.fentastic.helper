@@ -3,6 +3,7 @@
 import xbmc, xbmcgui, xbmcvfs
 import sqlite3 as database
 from modules import xmls
+from urllib.parse import quote
 from threading import Thread
 
 # from modules.logger import logger
@@ -75,6 +76,10 @@ class SPaths:
         ).fetchall()
         return results
 
+    def reload_skin(self):
+        xbmc.sleep(200)
+        xbmc.executebuiltin("ReloadSkin()")
+
     def make_search_history_xml(self, active_spaths):
         if not self.refresh_spaths:
             return
@@ -94,7 +99,7 @@ class SPaths:
     def write_xml(self, xml_file, final_format):
         with xbmcvfs.File(xml_file, "w") as f:
             f.write(final_format)
-        xbmc.executebuiltin("ReloadSkin()")
+        Thread(target=self.reload_skin).start()
 
     def make_default_xml(self):
         item = default_xmls["search_history"]
@@ -102,7 +107,7 @@ class SPaths:
         xml_file = "special://skin/xml/%s.xml" % item[0]
         with xbmcvfs.File(xml_file, "w") as f:
             f.write(final_format)
-        xbmc.executebuiltin("ReloadSkin()")
+        Thread(target=self.reload_skin).start()
 
     def check_spath_exists(self, spath):
         result = self.dbcur.execute(
@@ -121,6 +126,9 @@ class SPaths:
                     return
             else:
                 return
+        # URL-encode the search term before passing it to Skin.SetString
+        encoded_search_term = quote(search_term)
+        xbmc.executebuiltin(f"Skin.SetString(SearchInputEncoded,{encoded_search_term})")
         xbmc.executebuiltin(f"Skin.SetString(SearchInput,{search_term})")
         if xbmcgui.getCurrentWindowId() == 10000:
             xbmc.executebuiltin("ActivateWindow(1121)")
@@ -135,6 +143,6 @@ class SPaths:
 
     def re_search(self):
         search_term = xbmc.getInfoLabel("ListItem.Label")
-        print("Here is the search term", search_term)
+        # print("Here is the search term", search_term)
         self.search_input(search_term)
         # xbmc.executebuiltin("ReloadSkin()")
