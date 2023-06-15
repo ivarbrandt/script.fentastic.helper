@@ -22,7 +22,6 @@ default_xmls = {
     "search_history": (search_history_xml, xmls.default_history, "SearchHistory")
 }
 
-
 default_path = "addons://sources/video"
 
 
@@ -69,6 +68,8 @@ class SPaths:
             self.dbcon.commit()
             dialog.ok("FENtastic", "Search history cleared")
             self.make_default_xml()
+            xbmc.executebuiltin("Skin.SetString(SearchInput,)")
+            xbmc.executebuiltin("Skin.SetString(SearchInputEncoded,)")
 
     def fetch_all_spaths(self):
         results = self.dbcur.execute(
@@ -85,9 +86,7 @@ class SPaths:
             return
         if not active_spaths:
             self.make_default_xml()
-
         xml_file = "special://skin/xml/%s.xml" % (search_history_xml)
-
         final_format = xmls.media_xml_start.format(main_include="SearchHistory")
         for _, spath in active_spaths:
             body = xmls.history_xml_body
@@ -126,7 +125,6 @@ class SPaths:
                     return
             else:
                 return
-        # URL-encode the search term before passing it to Skin.SetString
         encoded_search_term = quote(search_term)
         xbmc.executebuiltin(f"Skin.SetString(SearchInputEncoded,{encoded_search_term})")
         xbmc.executebuiltin(f"Skin.SetString(SearchInput,{search_term})")
@@ -140,9 +138,9 @@ class SPaths:
         self.add_spath_to_database(search_term)
         self.fetch_all_spaths()
         self.make_search_history_xml(self.fetch_all_spaths())
+        xbmc.sleep(500)
+        xbmc.executebuiltin("SetFocus(2000)")
 
     def re_search(self):
         search_term = xbmc.getInfoLabel("ListItem.Label")
-        # print("Here is the search term", search_term)
         self.search_input(search_term)
-        # xbmc.executebuiltin("ReloadSkin()")
