@@ -80,16 +80,17 @@ class SPaths:
         ).fetchall()
         return results
 
-    def reload_skin(self):
-        # xbmc.sleep(500)
-        xbmc.executebuiltin("ReloadSkin()")
+    # def reload_skin(self):
+    #     xbmc.sleep(500)
+    #     xbmc.executebuiltin("ReloadSkin()")
 
     def update_settings_and_reload_skin(self):
         xbmc.executebuiltin("Skin.SetString(SearchInput,)")
         xbmc.executebuiltin("Skin.SetString(SearchInputEncoded,)")
         xbmc.executebuiltin("Skin.SetString(DatabaseStatus, 'Empty')")
         xbmc.sleep(300)
-        self.reload_skin()
+        # self.reload_skin()
+        xbmc.executebuiltin("ReloadSkin()")
 
     def make_search_history_xml(self, active_spaths, event=None):
         if not self.refresh_spaths:
@@ -134,6 +135,8 @@ class SPaths:
             xbmc.executebuiltin("Skin.Reset(DatabaseStatus)")
             xbmc.executebuiltin("Skin.SetString(SearchInput,)")
             xbmc.executebuiltin("Skin.SetString(SearchInputEncoded,)")
+            xbmc.sleep(200)
+            xbmc.executebuiltin("SetFocus(802)")
 
     def search_input(self, search_term=None):
         if search_term is None or not search_term.strip():
@@ -154,8 +157,7 @@ class SPaths:
         if existing_spath:
             self.remove_spath_from_database(existing_spath)
         self.add_spath_to_database(search_term)
-        self.fetch_all_spaths()
-
+        # self.fetch_all_spaths()
         if xbmcgui.getCurrentWindowId() == 10000:
             self.make_search_history_xml(self.fetch_all_spaths())
         else:
@@ -165,7 +167,6 @@ class SPaths:
                 args=(self.fetch_all_spaths(), event),
             ).start()
             event.wait()
-
         xbmc.executebuiltin(f"Skin.SetString(SearchInputEncoded,{encoded_search_term})")
         xbmc.executebuiltin(f"Skin.SetString(SearchInput,{search_term})")
         xbmc.executebuiltin("SetFocus(2000)")
