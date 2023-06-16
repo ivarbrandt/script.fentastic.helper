@@ -57,4 +57,9 @@ def routing():
     if mode == "re_search":
         from modules.search_utils import SPaths
 
-    return SPaths().re_search()
+        return SPaths().re_search()
+
+    if mode == "open_search_window":
+        from modules.search_utils import SPaths
+
+        return SPaths().open_search_window()
