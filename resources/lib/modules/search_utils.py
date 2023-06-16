@@ -4,7 +4,7 @@ import xbmc, xbmcgui, xbmcvfs
 import sqlite3 as database
 from modules import xmls
 from urllib.parse import quote
-from threading import Thread
+from threading import Thread, Event
 
 # from modules.logger import logger
 
@@ -72,9 +72,7 @@ class SPaths:
             self.dbcur.execute("DELETE FROM sqlite_sequence WHERE name='spath'")
             self.dbcon.commit()
             self.make_default_xml()
-            xbmc.executebuiltin("Skin.SetString(SearchInput,)")
-            xbmc.executebuiltin("Skin.SetString(SearchInputEncoded,)")
-            xbmc.executebuiltin("Skin.SetString(DatabaseStatus, 'Empty')")
+            Thread(target=self.update_settings_and_reload_skin).start()
 
     def fetch_all_spaths(self):
         results = self.dbcur.execute(
@@ -83,10 +81,17 @@ class SPaths:
         return results
 
     def reload_skin(self):
-        xbmc.sleep(200)
+        # xbmc.sleep(500)
         xbmc.executebuiltin("ReloadSkin()")
 
-    def make_search_history_xml(self, active_spaths):
+    def update_settings_and_reload_skin(self):
+        xbmc.executebuiltin("Skin.SetString(SearchInput,)")
+        xbmc.executebuiltin("Skin.SetString(SearchInputEncoded,)")
+        xbmc.executebuiltin("Skin.SetString(DatabaseStatus, 'Empty')")
+        xbmc.sleep(300)
+        self.reload_skin()
+
+    def make_search_history_xml(self, active_spaths, event=None):
         if not self.refresh_spaths:
             return
         if not active_spaths:
@@ -99,11 +104,13 @@ class SPaths:
             final_format += body
         final_format += xmls.media_xml_end
         self.write_xml(xml_file, final_format)
+        xbmc.executebuiltin("ReloadSkin()")
+        if event is not None:
+            event.set()
 
     def write_xml(self, xml_file, final_format):
         with xbmcvfs.File(xml_file, "w") as f:
             f.write(final_format)
-        Thread(target=self.reload_skin).start()
 
     def make_default_xml(self):
         item = default_xmls["search_history"]
@@ -111,7 +118,6 @@ class SPaths:
         xml_file = "special://skin/xml/%s.xml" % item[0]
         with xbmcvfs.File(xml_file, "w") as f:
             f.write(final_format)
-        Thread(target=self.reload_skin).start()
 
     def check_spath_exists(self, spath):
         result = self.dbcur.execute(
@@ -149,8 +155,17 @@ class SPaths:
             self.remove_spath_from_database(existing_spath)
         self.add_spath_to_database(search_term)
         self.fetch_all_spaths()
-        self.make_search_history_xml(self.fetch_all_spaths())
-        xbmc.sleep(500)
+
+        if xbmcgui.getCurrentWindowId() == 10000:
+            self.make_search_history_xml(self.fetch_all_spaths())
+        else:
+            event = Event()
+            Thread(
+                target=self.make_search_history_xml,
+                args=(self.fetch_all_spaths(), event),
+            ).start()
+            event.wait()
+
         xbmc.executebuiltin(f"Skin.SetString(SearchInputEncoded,{encoded_search_term})")
         xbmc.executebuiltin(f"Skin.SetString(SearchInput,{search_term})")
         xbmc.executebuiltin("SetFocus(2000)")
