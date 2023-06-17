@@ -91,6 +91,8 @@ class SPaths:
         xbmc.sleep(300)
         # self.reload_skin()
         xbmc.executebuiltin("ReloadSkin()")
+        xbmc.sleep(200)
+        xbmc.executebuiltin("SetFocus(27400)")
 
     def make_search_history_xml(self, active_spaths, event=None):
         if not self.refresh_spaths:
@@ -131,6 +133,8 @@ class SPaths:
             xbmc.executebuiltin("ActivateWindow(1121)")
         if self.is_database_empty():
             xbmc.executebuiltin("Skin.SetString(DatabaseStatus, 'Empty')")
+            xbmc.sleep(200)
+            xbmc.executebuiltin("SetFocus(27400)")
         else:
             xbmc.executebuiltin("Skin.Reset(DatabaseStatus)")
             xbmc.executebuiltin("Skin.SetString(SearchInput,)")
