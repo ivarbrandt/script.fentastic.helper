@@ -180,5 +180,6 @@ def trakt_lists_search():
     keyboard.doModal()
     if keyboard.isConfirmed():
         search_term = keyboard.getText()
-        url = f"plugin://plugin.video.fen/?mode=get_search_term&search_type=trakt_lists&query={search_term}"
-        xbmc.executebuiltin(f"RunPlugin({url})")
+        if search_term and search_term.strip():
+            url = f"plugin://plugin.video.fen/?mode=get_search_term&search_type=trakt_lists&query={search_term}"
+            xbmc.executebuiltin(f"RunPlugin({url})")
