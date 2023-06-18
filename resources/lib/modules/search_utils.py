@@ -80,16 +80,11 @@ class SPaths:
         ).fetchall()
         return results
 
-    # def reload_skin(self):
-    #     xbmc.sleep(500)
-    #     xbmc.executebuiltin("ReloadSkin()")
-
     def update_settings_and_reload_skin(self):
         xbmc.executebuiltin("Skin.SetString(SearchInput,)")
         xbmc.executebuiltin("Skin.SetString(SearchInputEncoded,)")
         xbmc.executebuiltin("Skin.SetString(DatabaseStatus, 'Empty')")
         xbmc.sleep(300)
-        # self.reload_skin()
         xbmc.executebuiltin("ReloadSkin()")
         xbmc.sleep(200)
         xbmc.executebuiltin("SetFocus(27400)")
@@ -139,12 +134,13 @@ class SPaths:
             xbmc.executebuiltin("Skin.Reset(DatabaseStatus)")
             xbmc.executebuiltin("Skin.SetString(SearchInput,)")
             xbmc.executebuiltin("Skin.SetString(SearchInputEncoded,)")
+            xbmc.executebuiltin("ReloadSkin()")
             xbmc.sleep(200)
-            xbmc.executebuiltin("SetFocus(802)")
+            xbmc.executebuiltin("SetFocus(803)")
 
     def search_input(self, search_term=None):
         if search_term is None or not search_term.strip():
-            prompt = "Search" if xbmcgui.getCurrentWindowId() == 10000 else "New search"
+            prompt = "Search" if xbmcgui.getCurrentWindowId() == 10000 else "New Search"
             keyboard = xbmc.Keyboard("", prompt, False)
             keyboard.doModal()
             if keyboard.isConfirmed():
@@ -161,7 +157,6 @@ class SPaths:
         if existing_spath:
             self.remove_spath_from_database(existing_spath)
         self.add_spath_to_database(search_term)
-        # self.fetch_all_spaths()
         if xbmcgui.getCurrentWindowId() == 10000:
             self.make_search_history_xml(self.fetch_all_spaths())
         else:
@@ -178,3 +173,12 @@ class SPaths:
     def re_search(self):
         search_term = xbmc.getInfoLabel("ListItem.Label")
         self.search_input(search_term)
+
+
+def trakt_lists_search():
+    keyboard = xbmc.Keyboard("", "TRAKT Lists Search")
+    keyboard.doModal()
+    if keyboard.isConfirmed():
+        search_term = keyboard.getText()
+        url = f"plugin://plugin.video.fen/?mode=get_search_term&search_type=trakt_lists&query={search_term}"
+        xbmc.executebuiltin(f"RunPlugin({url})")
