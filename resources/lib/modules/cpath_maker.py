@@ -569,7 +569,7 @@ def remake_all_cpaths(silent=False):
     for item in ("movie.main_menu", "tvshow.main_menu"):
         CPaths(item).remake_main_menus()
     if not silent:
-        xbmcgui.Dialog().ok("Fentastic", "Menus and widgets remade")
+        xbmcgui.Dialog().ok("FENtastic", "Menus and widgets remade")
 
 
 def starting_widgets():

@@ -63,8 +63,3 @@ def routing():
         from modules.search_utils import SPaths
 
         return SPaths().open_search_window()
-
-    if mode == "trakt_lists_search":
-        from modules.search_utils import trakt_lists_search
-
-        return trakt_lists_search()

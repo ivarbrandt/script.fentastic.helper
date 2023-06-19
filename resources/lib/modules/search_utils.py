@@ -178,3 +178,16 @@ class SPaths:
     def re_search(self):
         search_term = xbmc.getInfoLabel("ListItem.Label")
         self.search_input(search_term)
+
+    def remake_search_history(self):
+        self.refresh_spaths = True
+        active_spaths = self.fetch_all_spaths()
+        if active_spaths:
+            self.make_search_history_xml(active_spaths)
+        else:
+            self.make_default_xml()
+
+
+def remake_all_spaths():
+    for item in "search_history":
+        SPaths(item).remake_search_history()
