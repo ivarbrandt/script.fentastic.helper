@@ -130,7 +130,7 @@ class SPaths:
         if self.is_database_empty():
             xbmc.executebuiltin("Skin.SetString(DatabaseStatus, 'Empty')")
             xbmc.executebuiltin("Skin.SetString(SearchInputTraktEncoded, 'none')")
-            xbmc.executebuiltin("ReloadSkin()")
+            # xbmc.executebuiltin("ReloadSkin()")
             xbmc.sleep(200)
             xbmc.executebuiltin("SetFocus(27400)")
         else:
