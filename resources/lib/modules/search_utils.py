@@ -83,6 +83,7 @@ class SPaths:
     def update_settings_and_reload_skin(self):
         xbmc.executebuiltin("Skin.SetString(SearchInput,)")
         xbmc.executebuiltin("Skin.SetString(SearchInputEncoded,)")
+        xbmc.executebuiltin("Skin.SetString(SearchInputTraktEncoded, 'none')")
         xbmc.executebuiltin("Skin.SetString(DatabaseStatus, 'Empty')")
         xbmc.sleep(300)
         xbmc.executebuiltin("ReloadSkin()")
@@ -134,6 +135,7 @@ class SPaths:
             xbmc.executebuiltin("Skin.Reset(DatabaseStatus)")
             xbmc.executebuiltin("Skin.SetString(SearchInput,)")
             xbmc.executebuiltin("Skin.SetString(SearchInputEncoded,)")
+            xbmc.executebuiltin("Skin.SetString(SearchInputTraktEncoded, 'none')")
             xbmc.executebuiltin("ReloadSkin()")
             xbmc.sleep(200)
             xbmc.executebuiltin("SetFocus(803)")
@@ -167,19 +169,12 @@ class SPaths:
             ).start()
             event.wait()
         xbmc.executebuiltin(f"Skin.SetString(SearchInputEncoded,{encoded_search_term})")
+        xbmc.executebuiltin(
+            f"Skin.SetString(SearchInputTraktEncoded,{encoded_search_term})"
+        )
         xbmc.executebuiltin(f"Skin.SetString(SearchInput,{search_term})")
         xbmc.executebuiltin("SetFocus(2000)")
 
     def re_search(self):
         search_term = xbmc.getInfoLabel("ListItem.Label")
         self.search_input(search_term)
-
-
-def trakt_lists_search():
-    keyboard = xbmc.Keyboard("", "TRAKT Lists Search")
-    keyboard.doModal()
-    if keyboard.isConfirmed():
-        search_term = keyboard.getText()
-        if search_term and search_term.strip():
-            url = f"plugin://plugin.video.fen/?mode=get_search_term&search_type=trakt_lists&query={search_term}"
-            xbmc.executebuiltin(f"RunPlugin({url})")
