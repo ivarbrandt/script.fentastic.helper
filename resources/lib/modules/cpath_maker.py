@@ -358,7 +358,8 @@ class CPaths:
                 ("Display type", "display_type"),
             ] + choices
         choice = dialog.select(
-            "%s options" % self.path_type.capitalize(), [i[0] for i in choices]
+            "%s options" % self.path_type.capitalize().replace("_", " "),
+            [i[0] for i in choices],
         )
         if choice == -1:
             return None
@@ -370,12 +371,13 @@ class CPaths:
                 dialog.ok("FENtastic", "Cannot move this widget")
                 return None
             if current_order == 1 and action == "move_up":
-                dialog.ok("FENtastic", "Widget is already at the top")
-                return None
+                new_order = max_widgets
             elif current_order == max_widgets and action == "move_down":
-                dialog.ok("FENtastic", "Widget is already at the bottom")
-                return None
-            new_order = current_order - 1 if action == "move_up" else current_order + 1
+                new_order = 1
+            else:
+                new_order = (
+                    current_order - 1 if action == "move_up" else current_order + 1
+                )
             self.swap_widgets(parts, current_order, new_order)
         elif action == "remake_path":
             self.remove_cpath_from_database(cpath_setting)
