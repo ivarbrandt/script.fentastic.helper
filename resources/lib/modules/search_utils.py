@@ -57,6 +57,11 @@ class SPaths:
         self.dbcon.commit()
 
     def is_database_empty(self):
+        spath_database_path = xbmcvfs.translatePath(
+            "special://profile/addon_data/script.fentastic.helper/spath_cache.db"
+        )
+        if not xbmcvfs.exists(spath_database_path):
+            return True
         self.dbcur.execute("SELECT COUNT(*) FROM spath")
         rows = self.dbcur.fetchone()[0]
         return rows == 0
