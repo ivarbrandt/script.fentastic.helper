@@ -315,6 +315,8 @@ class CPaths:
         for widget_type, widget_list_type in widget_types:
             if widget_list_type == cpath_type:
                 return widget_type
+            elif "Stacked" in cpath_type and widget_list_type in cpath_type:
+                return widget_type
         return None
 
     def widget_type(self, label="Choose widget display type", type_limit=4):
@@ -409,7 +411,13 @@ class CPaths:
                 widget_type = self.get_widget_type(result["cpath_type"])
                 if not widget_type:
                     return None
-                cpath_label = "%s | %s" % (cpath_header, widget_type)
+                if "Stacked" in cpath_type:
+                    cpath_label = "%s | Stacked (%s) | Category" % (
+                        cpath_header,
+                        widget_type,
+                    )
+                else:
+                    cpath_label = "%s | %s" % (cpath_header, widget_type)
                 self.update_cpath_in_database(
                     cpath_setting,
                     cpath_path,
