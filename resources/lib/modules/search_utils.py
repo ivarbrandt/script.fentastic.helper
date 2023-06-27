@@ -44,12 +44,12 @@ class SPaths:
         )
         self.dbcur = self.dbcon.cursor()
 
-    def initialize_spaths(self):
-        if not os.path.exists(spath_database_path):
-            spaths = SPaths()
-            xbmcgui.Window(10000).setProperty(
-                "fentastic.initialize_spaths", "Initialized"
-            )
+    # def initialize_spaths(self):
+    #     if not os.path.exists(spath_database_path):
+    #         spaths = SPaths()
+    #         xbmcgui.Window(10000).setProperty(
+    #             "fentastic.initialize_spaths", "Initialized"
+    #         )
 
     def add_spath_to_database(self, spath):
         self.refresh_spaths = True
@@ -143,7 +143,7 @@ class SPaths:
         if self.is_database_empty():
             xbmc.executebuiltin("Skin.SetString(DatabaseStatus, 'Empty')")
             xbmc.executebuiltin("Skin.SetString(SearchInputTraktEncoded, 'none')")
-            # xbmc.executebuiltin("ReloadSkin()")
+            xbmc.executebuiltin("ReloadSkin()")
             xbmc.sleep(200)
             xbmc.executebuiltin("SetFocus(27400)")
         else:
