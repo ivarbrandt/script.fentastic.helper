@@ -44,6 +44,11 @@ def routing():
 
         return remake_all_cpaths()
 
+    if mode == "initialize_spaths":
+        from modules.search_utils import SPaths
+
+        return SPaths().initialize_spaths()
+
     if mode == "search_input":
         from modules.search_utils import SPaths
 
