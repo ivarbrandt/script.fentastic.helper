@@ -5,7 +5,6 @@ import sqlite3 as database
 from modules import xmls
 from urllib.parse import quote
 from threading import Thread, Event
-import os
 
 # from modules.logger import logger
 
@@ -44,13 +43,6 @@ class SPaths:
         )
         self.dbcur = self.dbcon.cursor()
 
-    # def initialize_spaths(self):
-    #     if not os.path.exists(spath_database_path):
-    #         spaths = SPaths()
-    #         xbmcgui.Window(10000).setProperty(
-    #             "fentastic.initialize_spaths", "Initialized"
-    #         )
-
     def add_spath_to_database(self, spath):
         self.refresh_spaths = True
         self.dbcur.execute(
@@ -65,11 +57,6 @@ class SPaths:
         self.dbcon.commit()
 
     def is_database_empty(self):
-        # spath_database_path = xbmcvfs.translatePath(
-        #     "special://profile/addon_data/script.fentastic.helper/spath_cache.db"
-        # )
-        # if not xbmcvfs.exists(spath_database_path):
-        #     return True
         self.dbcur.execute("SELECT COUNT(*) FROM spath")
         rows = self.dbcur.fetchone()[0]
         return rows == 0
@@ -141,9 +128,10 @@ class SPaths:
         if xbmcgui.getCurrentWindowId() == 10000:
             xbmc.executebuiltin("ActivateWindow(1121)")
         if self.is_database_empty():
+            xbmc.sleep(200)
             xbmc.executebuiltin("Skin.SetString(DatabaseStatus, 'Empty')")
             xbmc.executebuiltin("Skin.SetString(SearchInputTraktEncoded, 'none')")
-            xbmc.executebuiltin("ReloadSkin()")
+            # xbmc.executebuiltin("ReloadSkin()")
             xbmc.sleep(200)
             xbmc.executebuiltin("SetFocus(27400)")
         else:
