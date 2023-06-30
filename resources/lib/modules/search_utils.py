@@ -128,10 +128,9 @@ class SPaths:
         if xbmcgui.getCurrentWindowId() == 10000:
             xbmc.executebuiltin("ActivateWindow(1121)")
         if self.is_database_empty():
-            xbmc.sleep(200)
             xbmc.executebuiltin("Skin.SetString(DatabaseStatus, 'Empty')")
             xbmc.executebuiltin("Skin.SetString(SearchInputTraktEncoded, 'none')")
-            # xbmc.executebuiltin("ReloadSkin()")
+            xbmc.executebuiltin("ReloadSkin()")
             xbmc.sleep(200)
             xbmc.executebuiltin("SetFocus(27400)")
         else:
