@@ -19,7 +19,7 @@ media_xml_body = '\
 
 history_xml_body = "\
 \n        <item>\
-\n            <label>{spath}</label>\
+\n            <label>$NUMBER[{spath}]</label>\
 \n            <onclick>RunScript(script.fentastic.helper,mode=re_search)</onclick>\
 \n        </item>"
 
