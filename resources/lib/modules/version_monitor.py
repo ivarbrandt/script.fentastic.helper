@@ -24,6 +24,8 @@ def check_for_update(skin_id):
     remake_all_spaths()
     starting_widgets()
 
+    # TODO Implement new check_for_profile_change function
+
 
 def set_installed_version(skin_id, installed_version):
     window.setProperty("%s.installed_version" % skin_id, installed_version)

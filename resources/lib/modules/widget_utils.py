@@ -25,7 +25,9 @@ def widget_monitor(list_id):
         else:
             window = xbmcgui.Window(window_id)
             stack_control = window.getControl(int(stack_id))
-            stack_label_control = window.getControl(int(stack_id + "666"))
+            stack_label_control = window.getControl(
+                int(stack_id + "666")
+            ) or window.getControl(int(stack_id + "667"))
         monitor.waitForAbort(0.25)
         if list_id != str(window.getFocusId()):
             break
