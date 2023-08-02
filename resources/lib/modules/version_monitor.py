@@ -29,7 +29,7 @@ def check_for_update(skin_id):
     set_installed_version(skin_id, installed_version)
     sleep(1000)
     remake_all_cpaths(silent=True)
-    remake_all_spaths()
+    remake_all_spaths(silent=True)
     starting_widgets()
 
 
