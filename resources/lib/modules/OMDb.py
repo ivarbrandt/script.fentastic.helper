@@ -128,9 +128,6 @@ class OMDbAPI:
         }
         return data
 
-    def __del__(self):
-        self.dbcon.close()
-
 
 def test_api():
     xbmc.log("test_api function triggered!", level=xbmc.LOGDEBUG)
