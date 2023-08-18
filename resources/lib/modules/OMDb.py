@@ -110,21 +110,19 @@ class OMDbAPI:
             )
             return {}
         root = ET.fromstring(response.content)
-        movie_data = root.find("movie")
-        if movie_data is None:
+        data = root.find("movie")
+        if data is None:
             return {}
         data = {
-            "metascore": movie_data.get("metascore") + "%"
-            if movie_data.get("metascore")
+            "metascore": data.get("metascore") + "%" if data.get("metascore") else None,
+            "tomatoMeter": data.get("tomatoMeter") + "%"
+            if data.get("tomatoMeter")
             else None,
-            "tomatoMeter": movie_data.get("tomatoMeter") + "%"
-            if movie_data.get("tomatoMeter")
+            "tomatoUserMeter": data.get("tomatoUserMeter") + "%"
+            if data.get("tomatoUserMeter")
             else None,
-            "tomatoUserMeter": movie_data.get("tomatoUserMeter") + "%"
-            if movie_data.get("tomatoUserMeter")
-            else None,
-            "tomatoImage": movie_data.get("tomatoImage"),
-            "imdbRating": movie_data.get("imdbRating"),
+            "tomatoImage": data.get("tomatoImage"),
+            "imdbRating": data.get("imdbRating"),
         }
         return data
 
