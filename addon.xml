@@ -2,6 +2,7 @@
 <addon id="script.fentastic.helper" name="FENtastic Helper" version="0.6.15a" provider-name="Tikipeter, Ivar Brandt">
     <requires>
         <import addon="xbmc.python" version="3.0.0"/>
+        <import addon="script.module.requests" version="2.19.1"/>
     </requires>
     <extension point="xbmc.python.library" library="resources/lib/default.py"/>
     <extension point="xbmc.addon.metadata">
