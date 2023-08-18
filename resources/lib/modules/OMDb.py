@@ -1,5 +1,5 @@
 import xbmc, xbmcvfs
-from datetime import datetime, timedelta
+import datetime as dt
 import xml.etree.ElementTree as ET
 import sqlite3 as database
 import requests
@@ -53,7 +53,7 @@ class OMDbAPI:
             SET ratings=?, last_updated=?
             WHERE imdb_id=?
             """,
-                (ratings_data, datetime.now(), imdb_id),
+                (ratings_data, dt.datetime.now(), imdb_id),
             )
         else:
             self.dbcur.execute(
@@ -61,7 +61,7 @@ class OMDbAPI:
             INSERT INTO ratings (imdb_id, ratings, last_updated)
             VALUES (?, ?, ?)
             """,
-                (imdb_id, ratings_data, datetime.now()),
+                (imdb_id, ratings_data, dt.datetime.now()),
             )
         self.dbcon.commit()
 
@@ -74,9 +74,9 @@ class OMDbAPI:
         if entry:
             _, ratings_data, last_updated = entry
             ratings = json.loads(ratings_data)
-            if datetime.now() - datetime.strptime(
+            if dt.datetime.now() - dt.datetime.strptime(
                 last_updated, "%Y-%m-%d %H:%M:%S.%f"
-            ) < timedelta(days=7):
+            ) < dt.timedelta(days=7):
                 return ratings
         return None
 
