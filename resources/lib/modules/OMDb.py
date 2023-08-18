@@ -94,7 +94,7 @@ class OMDbAPI:
     def get_result(self, imdb_id, api_key):
         api_key = xbmc.getInfoLabel("Skin.String(omdb_api_key)")
         if not api_key:
-            xbmc.log("No OMDb API key set in the skin settings.", level=xbmc.LOGERROR)
+            xbmc.log("No OMDb API key set in the skin settings.", level=xbmc.LOGDEBUG)
             return {}
         url = (
             f"http://www.omdbapi.com/?i={imdb_id}&apikey={api_key}&tomatoes=True&r=xml"
@@ -113,6 +113,7 @@ class OMDbAPI:
         data = root.find("movie")
         if data is None:
             return {}
+        tmdb_rating = xbmc.getInfoLabel("ListItem.Rating")
         data = {
             "metascore": data.get("metascore") + "%" if data.get("metascore") else None,
             "tomatoMeter": data.get("tomatoMeter") + "%"
@@ -123,6 +124,7 @@ class OMDbAPI:
             else None,
             "tomatoImage": data.get("tomatoImage"),
             "imdbRating": data.get("imdbRating"),
+            "tmdbRating": tmdb_rating,
         }
         return data
 
@@ -132,7 +134,7 @@ def test_api():
     api_key = xbmc.getInfoLabel("Skin.String(omdb_api_key)")
     imdb_id = xbmc.getInfoLabel("ListItem.IMDBNumber")
     if not api_key:
-        xbmc.log("No OMDb API key set in the skin settings.", level=xbmc.LOGERROR)
+        xbmc.log("No OMDb API key set in the skin settings.", level=xbmc.LOGDEBUG)
         return {}
     if not imdb_id or not imdb_id.startswith("tt"):
         xbmc.log(
