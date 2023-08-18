@@ -110,35 +110,29 @@ class OMDbAPI:
             )
             return {}
         root = ET.fromstring(response.content)
-        movie_data = root.find("movie")
-        if movie_data is None:
+        data = root.find("movie")
+        if data is None:
             return {}
         tmdb_rating = xbmc.getInfoLabel("ListItem.Rating")
         data = {
-            "metascore": (
-                movie_data.get("metascore") + "%" if movie_data.get("metascore") else ""
-            )
-            if movie_data.get("metascore") != "N/A"
+            "metascore": (data.get("metascore") + "%" if data.get("metascore") else "")
+            if data.get("metascore") != "N/A"
             else "",
             "tomatoMeter": (
-                movie_data.get("tomatoMeter") + "%"
-                if movie_data.get("tomatoMeter")
-                else ""
+                data.get("tomatoMeter") + "%" if data.get("tomatoMeter") else ""
             )
-            if movie_data.get("tomatoMeter") != "N/A"
+            if data.get("tomatoMeter") != "N/A"
             else "",
             "tomatoUserMeter": (
-                movie_data.get("tomatoUserMeter") + "%"
-                if movie_data.get("tomatoUserMeter")
-                else ""
+                data.get("tomatoUserMeter") + "%" if data.get("tomatoUserMeter") else ""
             )
-            if movie_data.get("tomatoUserMeter") != "N/A"
+            if data.get("tomatoUserMeter") != "N/A"
             else "",
-            "tomatoImage": movie_data.get("tomatoImage")
-            if movie_data.get("tomatoImage") != "N/A"
+            "tomatoImage": data.get("tomatoImage")
+            if data.get("tomatoImage") != "N/A"
             else "",
-            "imdbRating": movie_data.get("imdbRating")
-            if movie_data.get("imdbRating") != "N/A"
+            "imdbRating": data.get("imdbRating")
+            if data.get("imdbRating") != "N/A"
             else "",
             "tmdbRating": tmdb_rating if tmdb_rating != "N/A" else "",
         }
