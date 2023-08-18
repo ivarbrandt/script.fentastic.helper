@@ -94,7 +94,7 @@ class OMDbAPI:
     def get_result(self, imdb_id, api_key):
         api_key = xbmc.getInfoLabel("Skin.String(omdb_api_key)")
         if not api_key:
-            xbmc.log("No OMDb API key set in the skin settings.", level=xbmc.LOGDEBUG)
+            xbmc.log("No OMDb API key set in the skin settings.", level=xbmc.LOGERROR)
             return {}
         url = (
             f"http://www.omdbapi.com/?i={imdb_id}&apikey={api_key}&tomatoes=True&r=xml"
@@ -110,21 +110,37 @@ class OMDbAPI:
             )
             return {}
         root = ET.fromstring(response.content)
-        data = root.find("movie")
-        if data is None:
+        movie_data = root.find("movie")
+        if movie_data is None:
             return {}
         tmdb_rating = xbmc.getInfoLabel("ListItem.Rating")
         data = {
-            "metascore": data.get("metascore") + "%" if data.get("metascore") else None,
-            "tomatoMeter": data.get("tomatoMeter") + "%"
-            if data.get("tomatoMeter")
-            else None,
-            "tomatoUserMeter": data.get("tomatoUserMeter") + "%"
-            if data.get("tomatoUserMeter")
-            else None,
-            "tomatoImage": data.get("tomatoImage"),
-            "imdbRating": data.get("imdbRating"),
-            "tmdbRating": tmdb_rating,
+            "metascore": (
+                movie_data.get("metascore") + "%" if movie_data.get("metascore") else ""
+            )
+            if movie_data.get("metascore") != "N/A"
+            else "",
+            "tomatoMeter": (
+                movie_data.get("tomatoMeter") + "%"
+                if movie_data.get("tomatoMeter")
+                else ""
+            )
+            if movie_data.get("tomatoMeter") != "N/A"
+            else "",
+            "tomatoUserMeter": (
+                movie_data.get("tomatoUserMeter") + "%"
+                if movie_data.get("tomatoUserMeter")
+                else ""
+            )
+            if movie_data.get("tomatoUserMeter") != "N/A"
+            else "",
+            "tomatoImage": movie_data.get("tomatoImage")
+            if movie_data.get("tomatoImage") != "N/A"
+            else "",
+            "imdbRating": movie_data.get("imdbRating")
+            if movie_data.get("imdbRating") != "N/A"
+            else "",
+            "tmdbRating": tmdb_rating if tmdb_rating != "N/A" else "",
         }
         return data
 
