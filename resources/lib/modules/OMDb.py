@@ -1,7 +1,8 @@
-import xbmc, xbmcvfs
+import xbmc, xbmcgui, xbmcvfs
 import datetime as dt
 import xml.etree.ElementTree as ET
 import sqlite3 as database
+import time
 import requests
 import json
 
@@ -24,7 +25,7 @@ session = make_session("http://www.omdbapi.com/")
 
 
 class OMDbAPI:
-    # last_checked_imdb_id = None
+    last_checked_imdb_id = None
 
     def __init__(self):
         self.connect_database()
@@ -44,27 +45,22 @@ class OMDbAPI:
         )
         self.dbcur = self.dbcon.cursor()
 
+    def datetime_workaround(self, data, str_format):
+        try:
+            datetime_object = dt.datetime.strptime(data, str_format)
+        except:
+            datetime_object = dt.datetime(*(time.strptime(data, str_format)[0:6]))
+        return datetime_object
+
     def insert_or_update_ratings(self, imdb_id, ratings):
-        self.dbcur.execute("SELECT imdb_id FROM ratings WHERE imdb_id=?", (imdb_id,))
-        entry = self.dbcur.fetchone()
         ratings_data = json.dumps(ratings)
-        if entry:
-            self.dbcur.execute(
-                """
-            UPDATE ratings 
-            SET ratings=?, last_updated=?
-            WHERE imdb_id=?
-            """,
-                (ratings_data, dt.datetime.now(), imdb_id),
-            )
-        else:
-            self.dbcur.execute(
-                """
-            INSERT INTO ratings (imdb_id, ratings, last_updated)
+        self.dbcur.execute(
+            """
+            INSERT OR REPLACE INTO ratings (imdb_id, ratings, last_updated)
             VALUES (?, ?, ?)
             """,
-                (imdb_id, ratings_data, dt.datetime.now()),
-            )
+            (imdb_id, ratings_data, dt.datetime.now()),
+        )
         self.dbcon.commit()
 
     def get_cached_ratings(self, imdb_id):
@@ -76,9 +72,10 @@ class OMDbAPI:
         if entry:
             _, ratings_data, last_updated = entry
             ratings = json.loads(ratings_data)
-            if dt.datetime.now() - dt.datetime.strptime(
+            last_updated_date = self.datetime_workaround(
                 last_updated, "%Y-%m-%d %H:%M:%S.%f"
-            ) < dt.timedelta(days=7):
+            )
+            if dt.datetime.now() - last_updated_date < dt.timedelta(days=7):
                 return ratings
         return None
 
@@ -141,12 +138,19 @@ class OMDbAPI:
         return data
 
 
+def set_api_key():
+    keyboard = xbmc.Keyboard("", "Enter OMDb API Key")
+    keyboard.doModal()
+    if keyboard.isConfirmed() and keyboard.getText():
+        xbmc.executebuiltin(f"Skin.SetString(omdb_api_key,{keyboard.getText()})")
+
+
 def test_api():
     # xbmc.log("test_api function triggered!", level=xbmc.LOGDEBUG)
     api_key = xbmc.getInfoLabel("Skin.String(omdb_api_key)")
     imdb_id = xbmc.getInfoLabel("ListItem.IMDBNumber")
-    # if imdb_id == OMDbAPI.last_checked_imdb_id:
-    #     return
+    if imdb_id == OMDbAPI.last_checked_imdb_id:
+        return
     if not api_key:
         # xbmc.log("No OMDb API key set in the skin settings.", level=xbmc.LOGDEBUG)
         return {}
@@ -175,5 +179,5 @@ def test_api():
             #     level=xbmc.LOGDEBUG,
             # )
     # xbmc.log(f"Ratings for IMDb ID {imdb_id}: {result}", level=xbmc.LOGDEBUG)
-    # OMDbAPI.last_checked_imdb_id = imdb_id
+    OMDbAPI.last_checked_imdb_id = imdb_id
     return result
