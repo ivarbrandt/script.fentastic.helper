@@ -6,12 +6,16 @@ import time
 import requests
 import json
 
+logger = xbmc.log
+
 settings_path = xbmcvfs.translatePath(
     "special://profile/addon_data/script.fentastic.helper/"
 )
 ratings_database_path = xbmcvfs.translatePath(
     "special://profile/addon_data/script.fentastic.helper/ratings_cache.db"
 )
+
+IMAGE_PATH = "special://home/addons/skin.fentastic/resources/rating_images/"
 
 
 def make_session(url="https://"):
@@ -33,7 +37,7 @@ class OMDbAPI:
     def connect_database(self):
         if not xbmcvfs.exists(settings_path):
             xbmcvfs.mkdir(settings_path)
-        self.dbcon = database.connect(ratings_database_path, timeout=20)
+        self.dbcon = database.connect(ratings_database_path, timeout=60)
         self.dbcon.execute(
             """
         CREATE TABLE IF NOT EXISTS ratings (
@@ -79,63 +83,131 @@ class OMDbAPI:
                 return ratings
         return None
 
-    def fetch_info(self, meta, api_key):
+    def fetch_info(self, meta, api_key, tmdb_rating):
         imdb_id = meta.get("imdb_id")
         if not imdb_id or not api_key:
             return {}
         cached_ratings = self.get_cached_ratings(imdb_id)
         if cached_ratings:
+            logger("#####Accessing database for ratings#####", 2)
             return cached_ratings
-        data = self.get_result(imdb_id, meta)
+        data = self.get_result(imdb_id, api_key, tmdb_rating)
         self.insert_or_update_ratings(imdb_id, data)
         return data
 
-    def get_result(self, imdb_id, api_key):
+    def get_result(self, imdb_id, api_key, tmdb_rating):
         api_key = xbmc.getInfoLabel("Skin.String(omdb_api_key)")
         if not api_key:
-            # xbmc.log("No OMDb API key set in the skin settings.", level=xbmc.LOGERROR)
             return {}
+
         url = (
             f"http://www.omdbapi.com/?i={imdb_id}&apikey={api_key}&tomatoes=True&r=xml"
         )
-        # xbmc.log(
-        #     "Fetching fresh ratings for IMDb ID {} from the OMDb API.".format(imdb_id),
-        #     level=xbmc.LOGDEBUG,
-        # )
         response = session.get(url)
         if response.status_code != 200:
-            # xbmc.log(
-            #     f"Error fetching data from OMDb for IMDb ID {imdb_id}. Status code: {response.status_code}"
-            # )
             return {}
+
         root = ET.fromstring(response.content)
         data = root.find("movie")
         if data is None:
             return {}
-        tmdb_rating = xbmc.getInfoLabel("ListItem.Rating")
+
+        def get_rating_value(key, append_percent=False):
+            val = data.get(key, "").strip()
+            if (
+                val and val != "N/A" and (val.isdigit() or "." in val)
+            ):  # Including "." to account for decimal ratings
+                return val + ("%" if append_percent else "")
+            return ""
+
+        tomatometer_rating = get_rating_value("tomatoMeter", True)
+        tomatousermeter_rating = get_rating_value("tomatoUserMeter", True)
+        tomato_image = data.get("tomatoImage")
+
+        # Logic for tomato images remains unchanged
+        if tomato_image:
+            tomatometer_icon = IMAGE_PATH + (
+                "rtcertified.png"
+                if tomato_image == "certified"
+                else "rtfresh.png"
+                if tomato_image == "fresh"
+                else "rtrotten.png"
+            )
+        elif (
+            tomatometer_rating and int(float(tomatometer_rating.replace("%", ""))) > 59
+        ):  # Adjusted for possible floats
+            tomatometer_icon = IMAGE_PATH + "rtfresh.png"
+        else:
+            tomatometer_icon = IMAGE_PATH + "rtrotten.png"
+
+        if (
+            tomatousermeter_rating
+            and int(float(tomatousermeter_rating.replace("%", ""))) > 59
+        ):  # Adjusted for possible floats
+            tomatousermeter_icon = IMAGE_PATH + "popcorn.png"
+        else:
+            tomatousermeter_icon = IMAGE_PATH + "popcorn_spilt.png"
+
         data = {
-            "metascore": (data.get("metascore") + "%" if data.get("metascore") else "")
-            if data.get("metascore") != "N/A"
-            else "",
-            "tomatoMeter": (
-                data.get("tomatoMeter") + "%" if data.get("tomatoMeter") else ""
-            )
-            if data.get("tomatoMeter") != "N/A"
-            else "",
-            "tomatoUserMeter": (
-                data.get("tomatoUserMeter") + "%" if data.get("tomatoUserMeter") else ""
-            )
-            if data.get("tomatoUserMeter") != "N/A"
-            else "",
-            "tomatoImage": data.get("tomatoImage")
-            if data.get("tomatoImage") != "N/A"
-            else "",
-            "imdbRating": data.get("imdbRating")
-            if data.get("imdbRating") != "N/A"
-            else "",
+            "metascore": get_rating_value("metascore", True),
+            "metascoreImage": IMAGE_PATH + "metacritic.png",
+            "tomatoMeter": tomatometer_rating,
+            "tomatoUserMeter": tomatousermeter_rating,
+            "tomatoImage": tomatometer_icon,
+            "tomatoUserImage": tomatousermeter_icon,
+            "imdbRating": get_rating_value("imdbRating"),
+            "imdbImage": IMAGE_PATH + "imdb.png",
             "tmdbRating": tmdb_rating if tmdb_rating != "N/A" else "",
+            "tmdbImage": IMAGE_PATH + "tmdb.png",
         }
+
         return data
+
+    # def get_result(self, imdb_id, api_key, tmdb_rating):
+    #     api_key = xbmc.getInfoLabel("Skin.String(omdb_api_key)")
+    #     if not api_key:
+    #         # xbmc.log("No OMDb API key set in the skin settings.", level=xbmc.LOGERROR)
+    #         return {}
+    #     url = (
+    #         f"http://www.omdbapi.com/?i={imdb_id}&apikey={api_key}&tomatoes=True&r=xml"
+    #     )
+    #     # xbmc.log(
+    #     #     "Fetching fresh ratings for IMDb ID {} from the OMDb API.".format(imdb_id),
+    #     #     level=xbmc.LOGDEBUG,
+    #     # )
+    #     response = session.get(url)
+    #     if response.status_code != 200:
+    #         # xbmc.log(
+    #         #     f"Error fetching data from OMDb for IMDb ID {imdb_id}. Status code: {response.status_code}"
+    #         # )
+    #         return {}
+    #     root = ET.fromstring(response.content)
+    #     data = root.find("movie")
+    #     if data is None:
+    #         return {}
+    #     data = {
+    #         "metascore": (data.get("metascore") + "%" if data.get("metascore") else "")
+    #         if data.get("metascore") != "N/A"
+    #         else "",
+    #         "tomatoMeter": (
+    #             data.get("tomatoMeter") + "%" if data.get("tomatoMeter") else ""
+    #         )
+    #         if data.get("tomatoMeter") != "N/A"
+    #         else "",
+    #         "tomatoUserMeter": (
+    #             data.get("tomatoUserMeter") + "%" if data.get("tomatoUserMeter") else ""
+    #         )
+    #         if data.get("tomatoUserMeter") != "N/A"
+    #         else "",
+    #         "tomatoImage": data.get("tomatoImage")
+    #         if data.get("tomatoImage") != "N/A"
+    #         else "",
+    #         "imdbRating": data.get("imdbRating")
+    #         if data.get("imdbRating") != "N/A"
+    #         else "",
+    #         "tmdbRating": tmdb_rating if tmdb_rating != "N/A" else "",
+    #     }
+    #     return data
 
 
 def set_api_key():
@@ -145,39 +217,39 @@ def set_api_key():
         xbmc.executebuiltin(f"Skin.SetString(omdb_api_key,{keyboard.getText()})")
 
 
-def test_api():
-    # xbmc.log("test_api function triggered!", level=xbmc.LOGDEBUG)
-    api_key = xbmc.getInfoLabel("Skin.String(omdb_api_key)")
-    imdb_id = xbmc.getInfoLabel("ListItem.IMDBNumber")
-    if imdb_id == OMDbAPI.last_checked_imdb_id:
-        return
-    if not api_key:
-        # xbmc.log("No OMDb API key set in the skin settings.", level=xbmc.LOGDEBUG)
-        return {}
-    if not imdb_id or not imdb_id.startswith("tt"):
-        # xbmc.log(
-        #     "Could not retrieve a valid IMDb ID from the focused item.",
-        #     level=xbmc.LOGDEBUG,
-        # )
-        return {}
-    omdb_api_instance = OMDbAPI()
-    result = omdb_api_instance.fetch_info({"imdb_id": imdb_id}, api_key)
-    rating_properties_dict = {
-        "Metascore": "metascore",
-        "TomatoMeter": "tomatoMeter",
-        "TomatoUserMeter": "tomatoUserMeter",
-        "IMDbRating": "imdbRating",
-        "TMDbRating": "tmdbRating",
-    }
+# def test_api():
+#     # xbmc.log("test_api function triggered!", level=xbmc.LOGDEBUG)
+#     api_key = xbmc.getInfoLabel("Skin.String(omdb_api_key)")
+#     imdb_id = xbmc.getInfoLabel("ListItem.IMDBNumber")
+#     if imdb_id == OMDbAPI.last_checked_imdb_id:
+#         return
+#     if not api_key:
+#         # xbmc.log("No OMDb API key set in the skin settings.", level=xbmc.LOGDEBUG)
+#         return {}
+#     if not imdb_id or not imdb_id.startswith("tt"):
+#         # xbmc.log(
+#         #     "Could not retrieve a valid IMDb ID from the focused item.",
+#         #     level=xbmc.LOGDEBUG,
+#         # )
+#         return {}
+#     omdb_api_instance = OMDbAPI()
+#     result = omdb_api_instance.fetch_info({"imdb_id": imdb_id}, api_key)
+#     rating_properties_dict = {
+#         "Metascore": "metascore",
+#         "TomatoMeter": "tomatoMeter",
+#         "TomatoUserMeter": "tomatoUserMeter",
+#         "IMDbRating": "imdbRating",
+#         "TMDbRating": "tmdbRating",
+#     }
 
-    for rating_property_name, result_key in rating_properties_dict.items():
-        rating_value = result.get(result_key)
-        if rating_value:
-            xbmc.executebuiltin(f"SetProperty({rating_property_name}, {rating_value})")
-            # xbmc.log(
-            #     f"Setting property: {rating_property_name} with value: {rating_value}",
-            #     level=xbmc.LOGDEBUG,
-            # )
-    # xbmc.log(f"Ratings for IMDb ID {imdb_id}: {result}", level=xbmc.LOGDEBUG)
-    OMDbAPI.last_checked_imdb_id = imdb_id
-    return result
+#     for rating_property_name, result_key in rating_properties_dict.items():
+#         rating_value = result.get(result_key)
+#         if rating_value:
+#             xbmc.executebuiltin(f"SetProperty({rating_property_name}, {rating_value})")
+#             # xbmc.log(
+#             #     f"Setting property: {rating_property_name} with value: {rating_value}",
+#             #     level=xbmc.LOGDEBUG,
+#             # )
+#     # xbmc.log(f"Ratings for IMDb ID {imdb_id}: {result}", level=xbmc.LOGDEBUG)
+#     OMDbAPI.last_checked_imdb_id = imdb_id
+#     return result

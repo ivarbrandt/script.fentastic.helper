@@ -79,7 +79,7 @@ def routing():
 
         return set_api_key()
 
-    if mode == "start_service":
-        from modules.service import ratings_service
+    # if mode == "start_service":
+    #     from modules.service import ratings_service
 
-        return ratings_service()
+    #     return ratings_service()
