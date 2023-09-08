@@ -98,5 +98,6 @@ class RatingsService(xbmc.Monitor):
 
 # Add anything here you want to run as a service
 xbmc.log("RatingsService Started", 2)
-RatingsService().listitem_monitor()
+if xbmc.getSkinDir() == "skin.fentastic":
+    RatingsService().listitem_monitor()
 xbmc.log("RatingsService Finished", 2)
