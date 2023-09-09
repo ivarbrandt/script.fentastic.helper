@@ -25,11 +25,16 @@ class RatingsService(xbmc.Monitor):
 
     def listitem_monitor(self):
         while not self.abortRequested():
+            if xbmc.getSkinDir() != "skin.fentastic":
+                logger("###skin is not FENtastic###", 2)
+                self.waitForAbort(15)
+                continue
+
             api_key = self.get_infolabel("Skin.String(omdb_api_key)")
             if not api_key:
                 # No API key. Wait 5 seconds and then restart loop.
                 logger("###no API key###", 2)
-                self.waitForAbort(5)
+                self.waitForAbort(10)
                 continue
 
             if not self.get_visibility(
@@ -81,10 +86,10 @@ class RatingsService(xbmc.Monitor):
         #     set_property('fentastic.%s' % k, v)
 
         # Another small pause (you may not want to do this. If not, then remove the check below for the same imdb_id).
-        self.waitForAbort(0.05)
+        # self.waitForAbort(0.2)
         # Check the same listitem is focused before asking for the ratings. If not a match, don't fetch ratings.
-        if imdb_id != self.get_infolabel("ListItem.IMDBNumber"):
-            return
+        # if imdb_id != self.get_infolabel("ListItem.IMDBNumber"):
+        #     return
 
         result = self.omdb_api().fetch_info({"imdb_id": imdb_id}, api_key, tmdb_rating)
         logger("###IMDB_ID: %s, RESULT: %s###" % (imdb_id, result), 2)
@@ -98,6 +103,5 @@ class RatingsService(xbmc.Monitor):
 
 # Add anything here you want to run as a service
 xbmc.log("RatingsService Started", 2)
-if xbmc.getSkinDir() == "skin.fentastic":
-    RatingsService().listitem_monitor()
+RatingsService().listitem_monitor()
 xbmc.log("RatingsService Finished", 2)
