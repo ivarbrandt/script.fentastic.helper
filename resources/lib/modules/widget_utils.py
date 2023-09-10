@@ -57,7 +57,7 @@ def widget_monitor(list_id):
             widget_label = xbmc.getInfoLabel("ListItem.Label")
             if display_delay:
                 stack_label_control.setLabel(
-                    "Loading [COLOR button_focus][B]{}[/B][/COLOR] in [B]%0.2f[/B] seconds".format(
+                    "Loading [COLOR accent_color][B]{}[/B][/COLOR] in [B]%0.2f[/B] seconds".format(
                         widget_label
                     )
                     % (countdown)
