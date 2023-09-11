@@ -96,7 +96,6 @@ class OMDbAPI:
         return data
 
     def get_result(self, imdb_id, api_key, tmdb_rating):
-        api_key = xbmc.getInfoLabel("Skin.String(omdb_api_key)")
         if not api_key:
             return {}
         url = api_url % (api_key, imdb_id)
