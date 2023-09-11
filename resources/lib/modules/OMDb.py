@@ -1,4 +1,4 @@
-import xbmc, xbmcgui, xbmcvfs
+import xbmc, xbmcvfs
 import datetime as dt
 import xml.etree.ElementTree as ET
 import sqlite3 as database
@@ -6,7 +6,7 @@ import time
 import requests
 import json
 
-logger = xbmc.log
+# logger = xbmc.log
 
 settings_path = xbmcvfs.translatePath(
     "special://profile/addon_data/script.fentastic.helper/"
@@ -14,7 +14,6 @@ settings_path = xbmcvfs.translatePath(
 ratings_database_path = xbmcvfs.translatePath(
     "special://profile/addon_data/script.fentastic.helper/ratings_cache.db"
 )
-
 IMAGE_PATH = "special://home/addons/skin.fentastic/resources/rating_images/"
 
 
@@ -24,7 +23,7 @@ def make_session(url="https://"):
     return session
 
 
-url = "http://www.omdbapi.com/?apikey=%s&i=%s&tomatoes=True&r=xml"
+api_url = "http://www.omdbapi.com/?apikey=%s&i=%s&tomatoes=True&r=xml"
 session = make_session("http://www.omdbapi.com/")
 
 
@@ -89,9 +88,10 @@ class OMDbAPI:
             return {}
         cached_ratings = self.get_cached_ratings(imdb_id)
         if cached_ratings:
-            logger("#####Accessing database for ratings#####", 2)
+            # logger("#####Accessing database for ratings#####", 2)
             return cached_ratings
         data = self.get_result(imdb_id, api_key, tmdb_rating)
+        # logger("#####Fetching fresh ratings from the OMDb API#####", 2)
         self.insert_or_update_ratings(imdb_id, data)
         return data
 
@@ -99,14 +99,10 @@ class OMDbAPI:
         api_key = xbmc.getInfoLabel("Skin.String(omdb_api_key)")
         if not api_key:
             return {}
-
-        url = (
-            f"http://www.omdbapi.com/?i={imdb_id}&apikey={api_key}&tomatoes=True&r=xml"
-        )
+        url = api_url % (api_key, imdb_id)
         response = session.get(url)
         if response.status_code != 200:
             return {}
-
         root = ET.fromstring(response.content)
         data = root.find("movie")
         if data is None:
@@ -121,7 +117,6 @@ class OMDbAPI:
         tomatometer_rating = get_rating_value("tomatoMeter", True)
         tomatousermeter_rating = get_rating_value("tomatoUserMeter", True)
         tomato_image = data.get("tomatoImage")
-
         if tomato_image:
             tomatometer_icon = IMAGE_PATH + (
                 "rtcertified.png"
@@ -136,7 +131,6 @@ class OMDbAPI:
             tomatometer_icon = IMAGE_PATH + "rtfresh.png"
         else:
             tomatometer_icon = IMAGE_PATH + "rtrotten.png"
-
         if (
             tomatousermeter_rating
             and int(float(tomatousermeter_rating.replace("%", ""))) > 59
@@ -144,7 +138,6 @@ class OMDbAPI:
             tomatousermeter_icon = IMAGE_PATH + "popcorn.png"
         else:
             tomatousermeter_icon = IMAGE_PATH + "popcorn_spilt.png"
-
         data = {
             "metascore": get_rating_value("metascore", True),
             "metascoreImage": IMAGE_PATH + "metacritic.png",
@@ -157,7 +150,6 @@ class OMDbAPI:
             "tmdbRating": tmdb_rating if tmdb_rating != "N/A" else "",
             "tmdbImage": IMAGE_PATH + "tmdb.png",
         }
-
         return data
 
 
