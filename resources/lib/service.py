@@ -3,7 +3,7 @@ from threading import Thread
 from modules.OMDb import OMDbAPI
 import json
 
-# logger = xbmc.log
+logger = xbmc.log
 empty_ratings = {
     "metascore": "",
     "tomatoMeter": "",
@@ -24,8 +24,24 @@ class RatingsService(xbmc.Monitor):
         self.get_visibility = xbmc.getCondVisibility
         # self.current_imdb_id = ""
 
+    def onNotification(self, sender, method, data):
+        if sender == "xbmc":
+            current_window = self.window(self.get_window_id())
+            if method in ("GUI.OnScreensaverActivated", "System.OnSleep"):
+                current_window.setProperty("pause_services", "true")
+                logger("Device is Asleep: PAUSING Ratings Service", 1)
+            elif method in ("GUI.OnScreensaverDeactivated", "System.OnWake"):
+                current_window.clearProperty("pause_services")
+                logger("Device is Awake: RESUMING Ratings Service", 1)
+
     def listitem_monitor(self):
         while not self.abortRequested():
+            if (
+                self.window(self.get_window_id()).getProperty("pause_services")
+                == "true"
+            ):
+                self.waitForAbort(2)
+                continue
             if xbmc.getSkinDir() != "skin.fentastic":
                 # logger("###skin is not FENtastic###", 2)
                 self.waitForAbort(15)
