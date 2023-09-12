@@ -29,6 +29,7 @@ def widget_monitor(list_id):
                 window.getControl(int(stack_id + "666"))
                 or window.getControl(int(stack_id + "667"))
                 or window.getControl(int(stack_id + "668"))
+                or window.getControl(int(stack_id + "669"))
             )
         monitor.waitForAbort(0.25)
         if list_id != str(window.getFocusId()):
