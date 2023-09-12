@@ -3,7 +3,7 @@ from threading import Thread
 from modules.OMDb import OMDbAPI
 import json
 
-# logger = xbmc.log
+logger = xbmc.log
 empty_ratings = {
     "metascore": "",
     "tomatoMeter": "",
@@ -27,8 +27,10 @@ class RatingsService(xbmc.Monitor):
         if sender == "xbmc":
             if method in ("GUI.OnScreensaverActivated", "System.OnSleep"):
                 self.window(self.get_window_id()).setProperty("pause_services", "true")
+                logger("###FENtastic: Device is Asleep, PAUSING Ratings Service", 1)
             elif method in ("GUI.OnScreensaverDeactivated", "System.OnWake"):
                 self.window(self.get_window_id()).clearProperty("pause_services")
+                logger("###FENtastic: Device is Awake, RESUMING Ratings Service", 1)
 
     def listitem_monitor(self):
         while not self.abortRequested():
@@ -83,6 +85,6 @@ class RatingsService(xbmc.Monitor):
                 set_property("fentastic.%s" % k, v)
 
 
-xbmc.log("RatingsService Started", 2)
+logger("###FENtastic: Ratings Service Started", 1)
 RatingsService().listitem_monitor()
-xbmc.log("RatingsService Finished", 2)
+logger("###FENtastic: RatingsService Finished", 1)
