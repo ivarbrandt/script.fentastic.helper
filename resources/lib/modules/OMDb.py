@@ -88,10 +88,8 @@ class OMDbAPI:
             return {}
         cached_ratings = self.get_cached_ratings(imdb_id)
         if cached_ratings:
-            # logger("#####Accessing database for ratings#####", 2)
             return cached_ratings
         data = self.get_result(imdb_id, api_key, tmdb_rating)
-        # logger("#####Fetching fresh ratings from the OMDb API#####", 2)
         self.insert_or_update_ratings(imdb_id, data)
         return data
 
