@@ -55,7 +55,29 @@ class RatingsService(xbmc.Monitor):
             if self.get_visibility("Container.Scrolling"):
                 self.waitForAbort(0.2)
                 continue
+
             imdb_id = self.get_infolabel("ListItem.IMDBNumber")
+            dbtype = self.get_infolabel("ListItem.DBType")
+            title = self.get_infolabel("ListItem.TVShowTitle")
+            season = self.get_infolabel("ListItem.Season")
+            episode = self.get_infolabel("ListItem.Episode")
+
+            # Check if the dbtype is an episode
+            if dbtype == "episode":
+                # Retrieve the correct episode-specific IMDb ID
+                # xbmc.log(f"Querying for episode using series IMDb ID: {imdb_id}", 2)
+                episode_imdb_id = self.omdb_api().get_imdb_id(
+                    imdb_id=imdb_id,
+                    api_key=api_key,
+                    title=title,
+                    season=season,
+                    episode=episode,
+                )
+                xbmc.log(f"Received episode IMDb ID: {episode_imdb_id}", 2)
+                if episode_imdb_id:  # If we successfully get an episode IMDb ID
+                    imdb_id = episode_imdb_id
+                    # xbmc.log(f"EPISODE IMDb ID: {imdb_id}", 2)
+
             tmdb_rating = self.get_infolabel("ListItem.Rating")
             set_property = self.window(self.get_window_id()).setProperty
             get_property = self.window(self.get_window_id()).getProperty
@@ -66,6 +88,10 @@ class RatingsService(xbmc.Monitor):
                 self.waitForAbort(0.2)
                 continue
             if cached_ratings:
+                logger(
+                    f"###Fetched window property cached ratings for {imdb_id}: {cached_ratings}###",
+                    2,
+                )
                 result = json.loads(cached_ratings)
                 for k, v in result.items():
                     set_property("fentastic.%s" % k, v)

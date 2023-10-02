@@ -5,8 +5,9 @@ import sqlite3 as database
 import time
 import requests
 import json
+from urllib.parse import quote
 
-# logger = xbmc.log
+logger = xbmc.log
 
 settings_path = xbmcvfs.translatePath(
     "special://profile/addon_data/script.fentastic.helper/"
@@ -24,6 +25,9 @@ def make_session(url="https://"):
 
 
 api_url = "http://www.omdbapi.com/?apikey=%s&i=%s&tomatoes=True&r=xml"
+episode_url = (
+    "http://www.omdbapi.com/?apikey=%s&t=%s&Season=%s&Episode=%s&tomatoes=True&r=xml"
+)
 session = make_session("http://www.omdbapi.com/")
 
 
@@ -93,13 +97,48 @@ class OMDbAPI:
         self.insert_or_update_ratings(imdb_id, data)
         return data
 
+    def get_imdb_id(self, imdb_id, api_key, title=None, season=None, episode=None):
+        # If all the details are provided, query using title, season, and episode
+        xbmc.log(f"API Key: {api_key}", 2)
+        xbmc.log(f"IMDb ID: {imdb_id}", 2)
+        xbmc.log(f"Title: {title}", 2)
+        xbmc.log(f"Season: {season}", 2)
+        xbmc.log(f"Episode: {episode}", 2)
+
+        if title and season and episode:
+            encoded_title = quote(title)
+            url = episode_url % (api_key, encoded_title, season, episode)
+        else:
+            url = api_url % (api_key, imdb_id)  # Your existing logic
+        xbmc.log(f"Constructed URL: {url}", 2)
+        response = session.get(url)
+        if response.status_code != 200:
+            return None
+
+        root = ET.fromstring(response.content)
+        movie_element = root.find("movie")
+        if movie_element is not None:
+            episode_imdb_id = movie_element.get("imdbID")
+            if episode_imdb_id:
+                xbmc.log(
+                    f"Successfully extracted episode IMDb ID: {episode_imdb_id}", 2
+                )
+                return episode_imdb_id
+            else:
+                xbmc.log(f"Episode IMDb ID not found in XML.", 2)
+                return None
+        else:
+            xbmc.log(f"Did not find movie element in XML response.", 2)
+            return None
+
     def get_result(self, imdb_id, api_key, tmdb_rating):
-        if not api_key:
-            return {}
-        url = api_url % (api_key, imdb_id)
+        correct_imdb_id = self.get_imdb_id(imdb_id, api_key)
+        xbmc.log(f"Fetched IMDb ID: {correct_imdb_id}", 2)
+        url = api_url % (api_key, correct_imdb_id)
         response = session.get(url)
         if response.status_code != 200:
             return {}
+
         root = ET.fromstring(response.content)
         data = root.find("movie")
         if data is None:
