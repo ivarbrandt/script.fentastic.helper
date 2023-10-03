@@ -104,23 +104,46 @@ class MDbListAPI:
         for rating in ratings:
             source = rating.get("source")
             value = rating.get("value")
+            popular = rating.get("popular")
             if source == "imdb":
                 if value is not None:
                     data["imdbRating"] = str(value)
                     data["imdbImage"] = IMAGE_PATH + "imdb.png"
+
+                    # Setting the popularRating and the popularImage based on the conditions
+                    if popular is not None:
+                        data["popularRating"] = "#" + str(popular)
+                        if popular <= 10:
+                            data["popularImage"] = IMAGE_PATH + "purpleflame.png"
+                        elif 10 < popular <= 33:
+                            data["popularImage"] = IMAGE_PATH + "pinkflame.png"
+                        elif 33 < popular <= 66:
+                            data["popularImage"] = IMAGE_PATH + "redflame.png"
+                        elif 66 < popular <= 100:
+                            data["popularImage"] = IMAGE_PATH + "blueflame.png"
+                        else:
+                            data["popularRating"] = ""
+                            data["popularImage"] = ""
+                    else:
+                        data["popularRating"] = ""
+                        data["popularImage"] = ""
+
                 else:
                     data["imdbRating"] = ""
                     data["imdbImage"] = ""
+                    data["popularRating"] = ""
+                    data["popularImage"] = ""
+
             elif source == "metacritic":
                 if value is not None:
-                    data["metascore"] = str(value) + "%"
+                    data["metascore"] = str(value)
                     data["metascoreImage"] = IMAGE_PATH + "metacritic.png"
                 else:
                     data["metascore"] = ""
                     data["metascoreImage"] = ""
             elif source == "tomatoes":
                 if value is not None:
-                    data["tomatoMeter"] = str(value) + "%"
+                    data["tomatoMeter"] = str(value)
                     if value > 74:
                         data["tomatoImage"] = IMAGE_PATH + "rtcertified.png"
                     elif value > 59:
@@ -132,7 +155,7 @@ class MDbListAPI:
                     data["tomatoImage"] = ""
             elif source == "tomatoesaudience":
                 if value is not None:
-                    data["tomatoUserMeter"] = str(value) + "%"
+                    data["tomatoUserMeter"] = str(value)
                     if value > 59:
                         data["tomatoUserImage"] = IMAGE_PATH + "popcorn.png"
                     else:

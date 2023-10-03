@@ -10,6 +10,7 @@ empty_ratings = {
     "tomatoUserMeter": "",
     "tomatoImage": "",
     "imdbRating": "",
+    "popularRating": "",
     "tmdbRating": "",
 }
 
