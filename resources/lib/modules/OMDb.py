@@ -23,8 +23,8 @@ def make_session(url="https://"):
     return session
 
 
-api_url = "http://www.omdbapi.com/?apikey=%s&i=%s&tomatoes=True&r=xml"
-session = make_session("http://www.omdbapi.com/")
+api_url = "https://mdblist.com/api/?apikey=%s&i=%s"
+session = make_session("http://www.mdblist.com/")
 
 
 class OMDbAPI:
@@ -82,71 +82,71 @@ class OMDbAPI:
                 return ratings
         return None
 
-    def fetch_info(self, meta, api_key, tmdb_rating):
+    def fetch_info(self, meta, api_key):
         imdb_id = meta.get("imdb_id")
         if not imdb_id or not api_key:
             return {}
         cached_ratings = self.get_cached_ratings(imdb_id)
         if cached_ratings:
             return cached_ratings
-        data = self.get_result(imdb_id, api_key, tmdb_rating)
+        data = self.get_result(imdb_id, api_key)
         self.insert_or_update_ratings(imdb_id, data)
         return data
 
-    def get_result(self, imdb_id, api_key, tmdb_rating):
-        if not api_key:
-            return {}
+    def get_result(self, imdb_id, api_key):
         url = api_url % (api_key, imdb_id)
-        response = session.get(url)
+        response = requests.get(url)
         if response.status_code != 200:
             return {}
-        root = ET.fromstring(response.content)
-        data = root.find("movie")
-        if data is None:
-            return {}
-
-        def get_rating_value(key, append_percent=False):
-            val = data.get(key, "").strip()
-            if val and val != "N/A" and (val.isdigit() or "." in val):
-                return val + ("%" if append_percent else "")
-            return ""
-
-        tomatometer_rating = get_rating_value("tomatoMeter", True)
-        tomatousermeter_rating = get_rating_value("tomatoUserMeter", True)
-        tomato_image = data.get("tomatoImage")
-        if tomato_image:
-            tomatometer_icon = IMAGE_PATH + (
-                "rtcertified.png"
-                if tomato_image == "certified"
-                else "rtfresh.png"
-                if tomato_image == "fresh"
-                else "rtrotten.png"
-            )
-        elif (
-            tomatometer_rating and int(float(tomatometer_rating.replace("%", ""))) > 59
-        ):
-            tomatometer_icon = IMAGE_PATH + "rtfresh.png"
-        else:
-            tomatometer_icon = IMAGE_PATH + "rtrotten.png"
-        if (
-            tomatousermeter_rating
-            and int(float(tomatousermeter_rating.replace("%", ""))) > 59
-        ):
-            tomatousermeter_icon = IMAGE_PATH + "popcorn.png"
-        else:
-            tomatousermeter_icon = IMAGE_PATH + "popcorn_spilt.png"
-        data = {
-            "metascore": get_rating_value("metascore", True),
-            "metascoreImage": IMAGE_PATH + "metacritic.png",
-            "tomatoMeter": tomatometer_rating,
-            "tomatoUserMeter": tomatousermeter_rating,
-            "tomatoImage": tomatometer_icon,
-            "tomatoUserImage": tomatousermeter_icon,
-            "imdbRating": get_rating_value("imdbRating"),
-            "imdbImage": IMAGE_PATH + "imdb.png",
-            "tmdbRating": tmdb_rating if tmdb_rating != "N/A" else "",
-            "tmdbImage": IMAGE_PATH + "tmdb.png",
-        }
+        json_data = response.json()
+        ratings = json_data.get("ratings", [])
+        data = {}
+        for rating in ratings:
+            source = rating.get("source")
+            value = rating.get("value")
+            if source == "imdb":
+                if value is not None:
+                    data["imdbRating"] = str(value)
+                    data["imdbImage"] = IMAGE_PATH + "imdb.png"
+                else:
+                    data["imdbRating"] = ""
+                    data["imdbImage"] = ""
+            elif source == "metacritic":
+                if value is not None:
+                    data["metascore"] = str(value) + "%"
+                    data["metascoreImage"] = IMAGE_PATH + "metacritic.png"
+                else:
+                    data["metascore"] = ""
+                    data["metascoreImage"] = ""
+            elif source == "tomatoes":
+                if value is not None:
+                    data["tomatoMeter"] = str(value) + "%"
+                    if value > 74:
+                        data["tomatoImage"] = IMAGE_PATH + "rtcertified.png"
+                    elif value > 59:
+                        data["tomatoImage"] = IMAGE_PATH + "rtfresh.png"
+                    else:
+                        data["tomatoImage"] = IMAGE_PATH + "rtrotten.png"
+                else:
+                    data["tomatoMeter"] = ""
+                    data["tomatoImage"] = ""
+            elif source == "tomatoesaudience":
+                if value is not None:
+                    data["tomatoUserMeter"] = str(value) + "%"
+                    if value > 59:
+                        data["tomatoUserImage"] = IMAGE_PATH + "popcorn.png"
+                    else:
+                        data["tomatoUserImage"] = IMAGE_PATH + "popcorn_spilt.png"
+                else:
+                    data["tomatoUserMeter"] = ""
+                    data["tomatoUserImage"] = ""
+            elif source == "tmdb":
+                if value is not None:
+                    data["tmdbRating"] = str(value / 10.0)
+                    data["tmdbImage"] = IMAGE_PATH + "tmdb.png"
+                else:
+                    data["tmdbRating"] = ""
+                    data["tmdbImage"] = ""
         return data
 
 

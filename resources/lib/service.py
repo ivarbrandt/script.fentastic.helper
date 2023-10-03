@@ -56,7 +56,6 @@ class RatingsService(xbmc.Monitor):
                 self.waitForAbort(0.2)
                 continue
             imdb_id = self.get_infolabel("ListItem.IMDBNumber")
-            tmdb_rating = self.get_infolabel("ListItem.Rating")
             set_property = self.window(self.get_window_id()).setProperty
             get_property = self.window(self.get_window_id()).getProperty
             cached_ratings = get_property(f"fentastic.cachedRatings.{imdb_id}")
@@ -71,14 +70,12 @@ class RatingsService(xbmc.Monitor):
                     set_property("fentastic.%s" % k, v)
                 self.waitForAbort(0.2)
                 continue
-            Thread(
-                target=self.set_ratings, args=(api_key, imdb_id, tmdb_rating)
-            ).start()
+            Thread(target=self.set_ratings, args=(api_key, imdb_id)).start()
             self.waitForAbort(0.2)
 
-    def set_ratings(self, api_key, imdb_id, tmdb_rating):
+    def set_ratings(self, api_key, imdb_id):
         set_property = self.window(self.get_window_id()).setProperty
-        result = self.omdb_api().fetch_info({"imdb_id": imdb_id}, api_key, tmdb_rating)
+        result = self.omdb_api().fetch_info({"imdb_id": imdb_id}, api_key)
         if result:
             set_property(f"fentastic.cachedRatings.{imdb_id}", json.dumps(result))
             for k, v in result.items():
