@@ -70,7 +70,7 @@ def routing():
         return SPaths().open_search_window()
 
     if mode == "set_api_key":
-        from modules.OMDb import set_api_key
+        from modules.MDbList import set_api_key
 
         return set_api_key()
 

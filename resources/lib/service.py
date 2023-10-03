@@ -1,6 +1,6 @@
 import xbmc, xbmcgui
 from threading import Thread
-from modules.OMDb import OMDbAPI
+from modules.MDbList import MDbListAPI
 import json
 
 logger = xbmc.log
@@ -17,7 +17,7 @@ empty_ratings = {
 class RatingsService(xbmc.Monitor):
     def __init__(self):
         xbmc.Monitor.__init__(self)
-        self.omdb_api = OMDbAPI
+        self.mdblist_api = MDbListAPI
         self.window = xbmcgui.Window
         self.get_window_id = xbmcgui.getCurrentWindowId
         self.get_infolabel = xbmc.getInfoLabel
@@ -43,7 +43,7 @@ class RatingsService(xbmc.Monitor):
             if xbmc.getSkinDir() != "skin.fentastic":
                 self.waitForAbort(15)
                 continue
-            api_key = self.get_infolabel("Skin.String(omdb_api_key)")
+            api_key = self.get_infolabel("Skin.String(mdblist_api_key)")
             if not api_key:
                 self.waitForAbort(10)
                 continue
@@ -75,7 +75,7 @@ class RatingsService(xbmc.Monitor):
 
     def set_ratings(self, api_key, imdb_id):
         set_property = self.window(self.get_window_id()).setProperty
-        result = self.omdb_api().fetch_info({"imdb_id": imdb_id}, api_key)
+        result = self.mdblist_api().fetch_info({"imdb_id": imdb_id}, api_key)
         if result:
             set_property(f"fentastic.cachedRatings.{imdb_id}", json.dumps(result))
             for k, v in result.items():

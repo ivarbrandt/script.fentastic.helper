@@ -24,10 +24,10 @@ def make_session(url="https://"):
 
 
 api_url = "https://mdblist.com/api/?apikey=%s&i=%s"
-session = make_session("http://www.mdblist.com/")
+session = make_session("https://www.mdblist.com/")
 
 
-class OMDbAPI:
+class MDbListAPI:
     last_checked_imdb_id = None
 
     def __init__(self):
@@ -151,7 +151,7 @@ class OMDbAPI:
 
 
 def set_api_key():
-    keyboard = xbmc.Keyboard("", "Enter OMDb API Key")
+    keyboard = xbmc.Keyboard("", "Enter MDbList API Key")
     keyboard.doModal()
     if keyboard.isConfirmed() and keyboard.getText():
-        xbmc.executebuiltin(f"Skin.SetString(omdb_api_key,{keyboard.getText()})")
+        xbmc.executebuiltin(f"Skin.SetString(mdblist_api_key,{keyboard.getText()})")
