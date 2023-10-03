@@ -1,4 +1,4 @@
-import xbmc, xbmcvfs
+import xbmc, xbmcgui, xbmcvfs
 import datetime as dt
 import xml.etree.ElementTree as ET
 import sqlite3 as database
@@ -66,6 +66,12 @@ class MDbListAPI:
         )
         self.dbcon.commit()
 
+    def delete_all_ratings(self):
+        self.dbcur.execute("DELETE FROM ratings")
+        self.dbcon.commit()
+        dialog = xbmcgui.Dialog()
+        dialog.ok("FENtastic", "All ratings have been cleared from the database.")
+
     def get_cached_ratings(self, imdb_id):
         self.dbcur.execute(
             "SELECT imdb_id, ratings, last_updated FROM ratings WHERE imdb_id=?",
@@ -109,8 +115,6 @@ class MDbListAPI:
                 if value is not None:
                     data["imdbRating"] = str(value)
                     data["imdbImage"] = IMAGE_PATH + "imdb.png"
-
-                    # Setting the popularRating and the popularImage based on the conditions
                     if popular is not None:
                         data["popularRating"] = "#" + str(popular)
                         if popular <= 10:
@@ -127,13 +131,11 @@ class MDbListAPI:
                     else:
                         data["popularRating"] = ""
                         data["popularImage"] = ""
-
                 else:
                     data["imdbRating"] = ""
                     data["imdbImage"] = ""
                     data["popularRating"] = ""
                     data["popularImage"] = ""
-
             elif source == "metacritic":
                 if value is not None:
                     data["metascore"] = str(value)

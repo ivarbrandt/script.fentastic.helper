@@ -74,6 +74,11 @@ def routing():
 
         return set_api_key()
 
+    if mode == "delete_all_ratings":
+        from modules.MDbList import MDbListAPI
+
+        return MDbListAPI().delete_all_ratings()
+
     if mode == "set_image":
         from modules.custom_actions import set_image
 
