@@ -172,6 +172,8 @@ class MDbListAPI:
                 else:
                     data["tmdbRating"] = ""
                     data["tmdbImage"] = ""
+            trailer = json_data.get("trailer", "")
+            data["trailer"] = trailer
         return data
 
 

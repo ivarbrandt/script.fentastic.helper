@@ -20,6 +20,7 @@ class RatingsService(xbmc.Monitor):
         xbmc.Monitor.__init__(self)
         self.mdblist_api = MDbListAPI
         self.window = xbmcgui.Window
+        self.last_played_imdb_id = None
         self.get_window_id = xbmcgui.getCurrentWindowId
         self.get_infolabel = xbmc.getInfoLabel
         self.get_visibility = xbmc.getCondVisibility
@@ -33,6 +34,10 @@ class RatingsService(xbmc.Monitor):
                 self.window(self.get_window_id()).clearProperty("pause_services")
                 logger("###FENtastic: Device is Awake, RESUMING Ratings Service", 1)
 
+    def play_trailer_in_window(self, play_url):
+        list_item = xbmcgui.ListItem(path=play_url)
+        xbmc.Player().play(play_url, list_item, windowed=True)
+
     def listitem_monitor(self):
         while not self.abortRequested():
             if (
@@ -41,37 +46,61 @@ class RatingsService(xbmc.Monitor):
             ):
                 self.waitForAbort(2)
                 continue
+
             if xbmc.getSkinDir() != "skin.fentastic":
                 self.waitForAbort(15)
                 continue
+
             api_key = self.get_infolabel("Skin.String(mdblist_api_key)")
             if not api_key:
                 self.waitForAbort(10)
                 continue
+
             if not self.get_visibility(
                 "Window.IsVisible(videos) | Window.IsVisible(home) | Window.IsVisible(11121)"
             ):
                 self.waitForAbort(2)
                 continue
+
             if self.get_visibility("Container.Scrolling"):
                 self.waitForAbort(0.2)
                 continue
+
             imdb_id = self.get_infolabel("ListItem.IMDBNumber")
             set_property = self.window(self.get_window_id()).setProperty
             get_property = self.window(self.get_window_id()).getProperty
-            cached_ratings = get_property(f"fentastic.cachedRatings.{imdb_id}")
+
             if not imdb_id or not imdb_id.startswith("tt"):
                 for k, v in empty_ratings.items():
                     set_property("fentastic.%s" % k, v)
                 self.waitForAbort(0.2)
                 continue
+            cached_ratings = get_property(f"fentastic.cachedRatings.{imdb_id}")
             if cached_ratings:
                 result = json.loads(cached_ratings)
                 for k, v in result.items():
                     set_property("fentastic.%s" % k, v)
+            else:
+                Thread(target=self.set_ratings, args=(api_key, imdb_id)).start()
+            if xbmc.Player().isPlaying():
                 self.waitForAbort(0.2)
                 continue
-            Thread(target=self.set_ratings, args=(api_key, imdb_id)).start()
+            # Handle Trailers
+            if (
+                cached_ratings
+                and imdb_id != self.last_played_imdb_id
+                and imdb_id == self.get_infolabel("ListItem.IMDBNumber")
+            ):
+                trailer_url = json.loads(cached_ratings).get("trailer")
+                if trailer_url and "youtube.com/watch?v=" in trailer_url:
+                    video_id = trailer_url.split("v=")[-1]
+                    play_url = (
+                        "plugin://plugin.video.youtube/play/?video_id=" + video_id
+                    )
+                    self.waitForAbort(3)  # wait for 10 seconds
+                    if imdb_id == self.get_infolabel("ListItem.IMDBNumber"):
+                        self.play_trailer_in_window(play_url)
+                        self.last_played_imdb_id = imdb_id
             self.waitForAbort(0.2)
 
     def set_ratings(self, api_key, imdb_id):
