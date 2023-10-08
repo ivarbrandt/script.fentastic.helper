@@ -95,22 +95,25 @@ class RatingsService(xbmc.Monitor):
                         3
                     )  # Put skin variable here for custom number of seconds
                     if imdb_id == self.get_infolabel("ListItem.IMDBNumber"):
-                        xbmc.executebuiltin("Skin.SetString(TrailerPlaying, true)")
-                        # self.waitForAbort(0.5)
-                        self.play_trailer_in_window(play_url)
-                        self.waitForAbort(3)
-                        self.last_played_imdb_id = imdb_id
-                        initial_window_id = self.get_window_id()
-                        # self.waitForAbort(1)
-                        while xbmc.Player().isPlaying():
-                            self.waitForAbort(0.2)
-                            if self.get_window_id() != initial_window_id:
-                                xbmc.Player().stop()
-                                break
-                        # self.waitForAbort(0.7)
-                        xbmc.log("Clearing TrailerPlaying property", 2)
-                        xbmc.executebuiltin("Skin.Reset(TrailerPlaying)")
-            self.waitForAbort(0.2)
+                        if not xbmc.getCondVisibility(
+                            "Skin.HasSetting(Disable.AutoTrailers)"
+                        ):
+                            xbmc.executebuiltin("Skin.SetString(TrailerPlaying, true)")
+                            # self.waitForAbort(0.5)
+                            self.play_trailer_in_window(play_url)
+                            self.waitForAbort(3)
+                            self.last_played_imdb_id = imdb_id
+                            initial_window_id = self.get_window_id()
+                            # self.waitForAbort(1)
+                            while xbmc.Player().isPlaying():
+                                self.waitForAbort(0.2)
+                                if self.get_window_id() != initial_window_id:
+                                    xbmc.Player().stop()
+                                    break
+                            # self.waitForAbort(0.7)
+                            xbmc.log("Clearing TrailerPlaying property", 2)
+                            xbmc.executebuiltin("Skin.Reset(TrailerPlaying)")
+                    self.waitForAbort(0.2)
 
     def set_ratings(self, api_key, imdb_id):
         set_property = self.window(self.get_window_id()).setProperty
