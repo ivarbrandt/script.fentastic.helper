@@ -72,7 +72,7 @@ class MDbListAPI:
         dialog = xbmcgui.Dialog()
         dialog.ok("FENtastic", "All ratings have been cleared from the database.")
 
-    def get_cached_ratings(self, imdb_id):
+    def get_cached_info(self, imdb_id):
         self.dbcur.execute(
             "SELECT imdb_id, ratings, last_updated FROM ratings WHERE imdb_id=?",
             (imdb_id,),
@@ -92,9 +92,9 @@ class MDbListAPI:
         imdb_id = meta.get("imdb_id")
         if not imdb_id or not api_key:
             return {}
-        cached_ratings = self.get_cached_ratings(imdb_id)
-        if cached_ratings:
-            return cached_ratings
+        cached_info = self.get_cached_info(imdb_id)
+        if cached_info:
+            return cached_info
         data = self.get_result(imdb_id, api_key)
         self.insert_or_update_ratings(imdb_id, data)
         return data
