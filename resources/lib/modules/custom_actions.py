@@ -1,9 +1,10 @@
 import xbmc, xbmcgui, xbmcvfs
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
+import os
 
 KEYMAP_LOCATION = "special://userdata/keymaps/"
-POSSIBLE_KEYMAP_NAMES = ["gen.xml", "keyboard.xml"]
+POSSIBLE_KEYMAP_NAMES = ["gen.xml", "keyboard.xml", "keymap.xml"]
 
 
 def set_image():
@@ -14,12 +15,21 @@ def set_image():
         xbmc.executebuiltin("Skin.SetString(CustomBackground,%s)" % image_file)
 
 
-def get_current_keymap_path():
-    for keymap_name in POSSIBLE_KEYMAP_NAMES:
-        keymap_path = xbmcvfs.translatePath(KEYMAP_LOCATION + keymap_name)
-        if xbmcvfs.exists(keymap_path):
-            return keymap_path
-    return None
+# def get_current_keymap_path():
+#     for keymap_name in POSSIBLE_KEYMAP_NAMES:
+#         keymap_path = xbmcvfs.translatePath(KEYMAP_LOCATION + keymap_name)
+#         if xbmcvfs.exists(keymap_path):
+#             return keymap_path
+#     return None
+
+
+def get_all_existing_keymap_paths():
+    existing_paths = []
+    for name in POSSIBLE_KEYMAP_NAMES:
+        path = xbmcvfs.translatePath(f"special://profile/keymaps/{name}")
+        if xbmcvfs.exists(path):
+            existing_paths.append(path)
+    return existing_paths
 
 
 def get_parent_map(tree):
@@ -29,77 +39,74 @@ def get_parent_map(tree):
 def modify_keymap():
     xbmc.log("Modify Keymap Function Called", 2)
 
-    keymap_path = get_current_keymap_path()
+    keymap_paths = get_all_existing_keymap_paths()
 
-    # Return if the keymap doesn't exist
-    if not keymap_path:
-        return
+    for keymap_path in keymap_paths:
+        tree = ET.parse(keymap_path)
+        root = tree.getroot()
 
-    tree = ET.parse(keymap_path)
-    root = tree.getroot()
+        def has_play_trailer_tag(tag):
+            return tag.text == "RunScript(script.fentastic.helper, mode=play_trailer)"
 
-    parent_map = get_parent_map(tree)
+        play_pause_tags = root.findall(".//play_pause[@mod='longpress']")
+        t_key_tags = root.findall(".//t")
 
-    def has_play_trailer_tag(tag):
-        return tag.text == "RunScript(script.fentastic.helper, mode=play_trailer)"
+        global_tag = root.find("global")
+        if global_tag is None:
+            global_tag = ET.SubElement(root, "global")
 
-    play_pause_tags = [
-        tag
-        for tag in root.findall(".//play_pause[@mod='longpress']")
-        if has_play_trailer_tag(tag)
-    ]
+        keyboard_tag = global_tag.find("keyboard")
+        if keyboard_tag is None:
+            keyboard_tag = ET.SubElement(global_tag, "keyboard")
 
-    # If the specific skin setting is enabled
-    setting_value = xbmc.getCondVisibility("Skin.HasSetting(Enable.OneClickTrailers)")
-    xbmc.log(f"Skin setting Enable.OneClickTrailers: {setting_value}", 2)
+        setting_value = xbmc.getCondVisibility(
+            "Skin.HasSetting(Enable.OneClickTrailers)"
+        )
+        xbmc.log(f"Skin setting Enable.OneClickTrailers: {setting_value}", 2)
 
-    if xbmc.getCondVisibility("Skin.HasSetting(Enable.OneClickTrailers)"):
-        # If the tag doesn't exist, create and inject it
-        if not play_pause_tags:
-            keymap_tag = root
-            global_tag = keymap_tag.find("global")
-            if global_tag is None:
-                global_tag = ET.SubElement(keymap_tag, "global")
+        if setting_value:
+            # Overwrite or add <t> tag
+            if t_key_tags:
+                t_key_tags[
+                    0
+                ].text = "RunScript(script.fentastic.helper, mode=play_trailer)"
+                for tag in t_key_tags[1:]:  # Remove duplicates
+                    keyboard_tag.remove(tag)
+            else:
+                t_key_tag = ET.SubElement(keyboard_tag, "t")
+                t_key_tag.text = "RunScript(script.fentastic.helper, mode=play_trailer)"
 
-            keyboard_tag = global_tag.find("keyboard")
-            if keyboard_tag is None:
-                keyboard_tag = ET.SubElement(global_tag, "keyboard")
+            # Overwrite or add <play_pause> tag
+            if play_pause_tags:
+                play_pause_tags[
+                    0
+                ].text = "RunScript(script.fentastic.helper, mode=play_trailer)"
+                for tag in play_pause_tags[1:]:  # Remove duplicates
+                    keyboard_tag.remove(tag)
+            else:
+                play_pause_tag = ET.SubElement(
+                    keyboard_tag, "play_pause", mod="longpress"
+                )
+                play_pause_tag.text = (
+                    "RunScript(script.fentastic.helper, mode=play_trailer)"
+                )
 
-            play_pause_tag = ET.SubElement(keyboard_tag, "play_pause", mod="longpress")
-            play_pause_tag.text = (
-                "RunScript(script.fentastic.helper, mode=play_trailer)"
-            )
-    else:
-        # If the skin setting is disabled and the tag exists, remove it
-        xbmc.log(f"Number of play_pause tags found: {len(play_pause_tags)}", 2)
+        else:
+            # Remove all <t> and <play_pause> tags related to the script
+            for tag_list in [play_pause_tags, t_key_tags]:
+                for tag in tag_list:
+                    if has_play_trailer_tag(tag):
+                        keyboard_tag.remove(tag)
 
-        for tag in play_pause_tags:
-            keyboard_tag = parent_map[tag]
-            keyboard_tag.remove(tag)
+        # Write back the modified XML
+        xml_string = ET.tostring(root, encoding="utf-8").decode("utf-8")
+        pretty_xml = minidom.parseString(xml_string).toprettyxml(indent="  ")
+        pretty_xml = "\n".join(
+            [line for line in pretty_xml.split("\n") if line.strip()]
+        )
 
-            # If the parent tags are empty, remove them as well
-            if not list(keyboard_tag):
-                global_tag = parent_map[keyboard_tag]
-                global_tag.remove(keyboard_tag)
-                if not list(global_tag):
-                    keymap_tag = parent_map[global_tag]
-                    keymap_tag.remove(global_tag)
-                    if not list(keymap_tag):
-                        root.remove(keymap_tag)
-
-    # Write back the modified XML
-    xml_string = ET.tostring(root, encoding="utf-8").decode("utf-8")
-    pretty_xml = minidom.parseString(xml_string).toprettyxml(
-        indent="  "
-    )  # 2 spaces for indentation
-    pretty_xml = "\n".join(
-        [line for line in pretty_xml.split("\n") if line.strip()]
-    )  # Remove lines that contain only whitespace
-    with xbmcvfs.File(keymap_path, "w") as xml_file:
-        xml_file.write(pretty_xml)
-
-    # Notify Kodi to reload its keymaps
-    xbmc.executebuiltin("Action(reloadkeymaps)")
+        with xbmcvfs.File(keymap_path, "w") as xml_file:
+            xml_file.write(pretty_xml)
 
     # Notify Kodi to reload its keymaps
     xbmc.executebuiltin("Action(reloadkeymaps)")
