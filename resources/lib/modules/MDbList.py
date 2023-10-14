@@ -1,10 +1,10 @@
 import xbmc, xbmcgui, xbmcvfs
 import datetime as dt
-import xml.etree.ElementTree as ET
 import sqlite3 as database
 import time
 import requests
 import json
+import re
 
 # logger = xbmc.log
 
@@ -173,8 +173,23 @@ class MDbListAPI:
                     data["tmdbRating"] = ""
                     data["tmdbImage"] = ""
             trailer = json_data.get("trailer", "")
-            data["trailer"] = trailer
+            match = re.search(r"v=([a-zA-Z0-9_-]+)", trailer)
+            if match:
+                video_id = match.group(1)
+            else:
+                video_id = ""
+            data["trailer"] = video_id
         return data
+
+
+def play_trailer():
+    trailer_id = xbmc.getInfoLabel("Window.Property(fentastic.trailer)")
+    if trailer_id:
+        xbmc.executebuiltin("Skin.SetString(TrailerPlaying, true)")
+        play_url = f"plugin://plugin.video.youtube/play/?video_id={trailer_id}"
+        xbmc.executebuiltin(f"PlayMedia({play_url})")
+        xbmc.sleep(7000)
+        xbmc.executebuiltin("Skin.Reset(TrailerPlaying)")
 
 
 def set_api_key():

@@ -83,3 +83,13 @@ def routing():
         from modules.custom_actions import set_image
 
         return set_image()
+
+    if mode == "modify_keymap":
+        from modules.custom_actions import modify_keymap
+
+        return modify_keymap()
+
+    if mode == "play_trailer":
+        from modules.MDbList import play_trailer
+
+        return play_trailer()
