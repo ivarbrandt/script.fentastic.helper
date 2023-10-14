@@ -20,7 +20,6 @@ class RatingsService(xbmc.Monitor):
         xbmc.Monitor.__init__(self)
         self.mdblist_api = MDbListAPI
         self.window = xbmcgui.Window
-        self.last_played_imdb_id = None
         self.get_window_id = xbmcgui.getCurrentWindowId
         self.get_infolabel = xbmc.getInfoLabel
         self.get_visibility = xbmc.getCondVisibility
@@ -33,10 +32,6 @@ class RatingsService(xbmc.Monitor):
             elif method in ("GUI.OnScreensaverDeactivated", "System.OnWake"):
                 self.window(self.get_window_id()).clearProperty("pause_services")
                 logger("###FENtastic: Device is Awake, RESUMING Ratings Service", 1)
-
-    def play_trailer_in_window(self, play_url):
-        list_item = xbmcgui.ListItem(path=play_url)
-        xbmc.Player().play(play_url, list_item)
 
     def listitem_monitor(self):
         while not self.abortRequested():
@@ -64,56 +59,20 @@ class RatingsService(xbmc.Monitor):
             imdb_id = self.get_infolabel("ListItem.IMDBNumber")
             set_property = self.window(self.get_window_id()).setProperty
             get_property = self.window(self.get_window_id()).getProperty
+            cached_info = get_property(f"fentastic.cachedInfo.{imdb_id}")
             if not imdb_id or not imdb_id.startswith("tt"):
                 for k, v in empty_ratings.items():
                     set_property("fentastic.%s" % k, v)
                 self.waitForAbort(0.2)
                 continue
-            cached_info = get_property(f"fentastic.cachedInfo.{imdb_id}")
             if cached_info:
                 result = json.loads(cached_info)
                 for k, v in result.items():
                     set_property("fentastic.%s" % k, v)
-            else:
-                Thread(target=self.set_ratings, args=(api_key, imdb_id)).start()
-            if xbmc.Player().isPlaying():
                 self.waitForAbort(0.2)
                 continue
-            # Handle Trailers
-            if (
-                cached_info
-                and imdb_id != self.last_played_imdb_id
-                and imdb_id == self.get_infolabel("ListItem.IMDBNumber")
-            ):
-                trailer_url = json.loads(cached_info).get("trailer")
-                if trailer_url and "youtube.com/watch?v=" in trailer_url:
-                    video_id = trailer_url.split("v=")[-1]
-                    play_url = (
-                        "plugin://plugin.video.youtube/play/?video_id=" + video_id
-                    )
-                    self.waitForAbort(
-                        3
-                    )  # Put skin variable here for custom number of seconds
-                    if imdb_id == self.get_infolabel("ListItem.IMDBNumber"):
-                        if not xbmc.getCondVisibility(
-                            "Skin.HasSetting(Disable.AutoTrailers)"
-                        ):
-                            xbmc.executebuiltin("Skin.SetString(TrailerPlaying, true)")
-                            # self.waitForAbort(0.5)
-                            self.play_trailer_in_window(play_url)
-                            self.waitForAbort(3)
-                            self.last_played_imdb_id = imdb_id
-                            initial_window_id = self.get_window_id()
-                            # self.waitForAbort(1)
-                            while xbmc.Player().isPlaying():
-                                self.waitForAbort(0.2)
-                                if self.get_window_id() != initial_window_id:
-                                    xbmc.Player().stop()
-                                    break
-                            # self.waitForAbort(0.7)
-                            xbmc.log("Clearing TrailerPlaying property", 2)
-                            xbmc.executebuiltin("Skin.Reset(TrailerPlaying)")
-                    self.waitForAbort(0.2)
+            Thread(target=self.set_ratings, args=(api_key, imdb_id)).start()
+            self.waitForAbort(0.2)
 
     def set_ratings(self, api_key, imdb_id):
         set_property = self.window(self.get_window_id()).setProperty
