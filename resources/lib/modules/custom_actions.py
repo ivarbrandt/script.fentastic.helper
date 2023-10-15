@@ -1,7 +1,6 @@
 import xbmc, xbmcgui, xbmcvfs
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
-import os
 
 KEYMAP_LOCATION = "special://userdata/keymaps/"
 POSSIBLE_KEYMAP_NAMES = ["gen.xml", "keyboard.xml", "keymap.xml"]
