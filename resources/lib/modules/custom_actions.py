@@ -23,6 +23,19 @@ def set_image():
 #     return None
 
 
+def make_backup(keymap_path):
+    backup_path = f"{keymap_path}.backup"
+    if not xbmcvfs.exists(backup_path):  # Only backup if no previous backup exists
+        xbmcvfs.copy(keymap_path, backup_path)
+
+
+def restore_from_backup(keymap_path):
+    backup_path = f"{keymap_path}.backup"
+    if xbmcvfs.exists(backup_path):
+        xbmcvfs.delete(keymap_path)
+        xbmcvfs.rename(backup_path, keymap_path)
+
+
 def get_all_existing_keymap_paths():
     existing_paths = []
     for name in POSSIBLE_KEYMAP_NAMES:
@@ -41,7 +54,15 @@ def modify_keymap():
 
     keymap_paths = get_all_existing_keymap_paths()
 
+    setting_value = xbmc.getCondVisibility("Skin.HasSetting(Enable.OneClickTrailers)")
+    xbmc.log(f"Skin setting Enable.OneClickTrailers: {setting_value}", 2)
+
     for keymap_path in keymap_paths:
+        if not setting_value:
+            restore_from_backup(keymap_path)
+            continue
+
+        make_backup(keymap_path)
         tree = ET.parse(keymap_path)
         root = tree.getroot()
 
@@ -58,11 +79,6 @@ def modify_keymap():
         keyboard_tag = global_tag.find("keyboard")
         if keyboard_tag is None:
             keyboard_tag = ET.SubElement(global_tag, "keyboard")
-
-        setting_value = xbmc.getCondVisibility(
-            "Skin.HasSetting(Enable.OneClickTrailers)"
-        )
-        xbmc.log(f"Skin setting Enable.OneClickTrailers: {setting_value}", 2)
 
         if setting_value:
             # Overwrite or add <t> tag
