@@ -51,17 +51,13 @@ def get_parent_map(tree):
 
 def modify_keymap():
     xbmc.log("Modify Keymap Function Called", 2)
-
     keymap_paths = get_all_existing_keymap_paths()
-
     setting_value = xbmc.getCondVisibility("Skin.HasSetting(Enable.OneClickTrailers)")
     xbmc.log(f"Skin setting Enable.OneClickTrailers: {setting_value}", 2)
-
     for keymap_path in keymap_paths:
         if not setting_value:
             restore_from_backup(keymap_path)
             continue
-
         make_backup(keymap_path)
         tree = ET.parse(keymap_path)
         root = tree.getroot()
@@ -71,33 +67,27 @@ def modify_keymap():
 
         play_pause_tags = root.findall(".//play_pause[@mod='longpress']")
         t_key_tags = root.findall(".//t")
-
         global_tag = root.find("global")
         if global_tag is None:
             global_tag = ET.SubElement(root, "global")
-
         keyboard_tag = global_tag.find("keyboard")
         if keyboard_tag is None:
             keyboard_tag = ET.SubElement(global_tag, "keyboard")
-
         if setting_value:
-            # Overwrite or add <t> tag
             if t_key_tags:
                 t_key_tags[
                     0
                 ].text = "RunScript(script.fentastic.helper, mode=play_trailer)"
-                for tag in t_key_tags[1:]:  # Remove duplicates
+                for tag in t_key_tags[1:]:
                     keyboard_tag.remove(tag)
             else:
                 t_key_tag = ET.SubElement(keyboard_tag, "t")
                 t_key_tag.text = "RunScript(script.fentastic.helper, mode=play_trailer)"
-
-            # Overwrite or add <play_pause> tag
             if play_pause_tags:
                 play_pause_tags[
                     0
                 ].text = "RunScript(script.fentastic.helper, mode=play_trailer)"
-                for tag in play_pause_tags[1:]:  # Remove duplicates
+                for tag in play_pause_tags[1:]:
                     keyboard_tag.remove(tag)
             else:
                 play_pause_tag = ET.SubElement(
@@ -106,23 +96,16 @@ def modify_keymap():
                 play_pause_tag.text = (
                     "RunScript(script.fentastic.helper, mode=play_trailer)"
                 )
-
         else:
-            # Remove all <t> and <play_pause> tags related to the script
             for tag_list in [play_pause_tags, t_key_tags]:
                 for tag in tag_list:
                     if has_play_trailer_tag(tag):
                         keyboard_tag.remove(tag)
-
-        # Write back the modified XML
         xml_string = ET.tostring(root, encoding="utf-8").decode("utf-8")
         pretty_xml = minidom.parseString(xml_string).toprettyxml(indent="  ")
         pretty_xml = "\n".join(
             [line for line in pretty_xml.split("\n") if line.strip()]
         )
-
         with xbmcvfs.File(keymap_path, "w") as xml_file:
             xml_file.write(pretty_xml)
-
-    # Notify Kodi to reload its keymaps
     xbmc.executebuiltin("Action(reloadkeymaps)")
