@@ -24,7 +24,7 @@ def set_image():
 
 def make_backup(keymap_path):
     backup_path = f"{keymap_path}.backup"
-    if not xbmcvfs.exists(backup_path):  # Only backup if no previous backup exists
+    if not xbmcvfs.exists(backup_path):
         xbmcvfs.copy(keymap_path, backup_path)
 
 
@@ -49,10 +49,8 @@ def get_parent_map(tree):
 
 
 def modify_keymap():
-    xbmc.log("Modify Keymap Function Called", 2)
     keymap_paths = get_all_existing_keymap_paths()
     setting_value = xbmc.getCondVisibility("Skin.HasSetting(Enable.OneClickTrailers)")
-    xbmc.log(f"Skin setting Enable.OneClickTrailers: {setting_value}", 2)
     for keymap_path in keymap_paths:
         if not setting_value:
             restore_from_backup(keymap_path)
