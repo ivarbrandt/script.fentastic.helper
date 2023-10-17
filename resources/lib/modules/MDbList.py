@@ -184,17 +184,16 @@ class MDbListAPI:
 
 def play_trailer_in_window(play_url):
     list_item = xbmcgui.ListItem(path=play_url)
-    xbmc.Player().play(play_url, list_item)
+    xbmc.Player().play(play_url, list_item, windowed=True)
 
 
 def play_trailer():
     trailer_id = xbmc.getInfoLabel("Window.Property(fentastic.trailer)")
     if trailer_id:
-        xbmc.executebuiltin("Skin.SetString(TrailerPlaying, true)")
+        xbmc.executebuiltin("Skin.SetBool(TrailerPlaying)")
+        # xbmc.executebuiltin("Notification(Trailer, Started)")
         play_url = "plugin://plugin.video.youtube/play/?video_id=" + trailer_id
         play_trailer_in_window(play_url)
-        xbmc.sleep(7000)
-        xbmc.executebuiltin("Skin.Reset(TrailerPlaying)")
 
 
 def set_api_key():

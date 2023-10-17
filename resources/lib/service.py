@@ -56,6 +56,31 @@ class RatingsService(xbmc.Monitor):
             if self.get_visibility("Container.Scrolling"):
                 self.waitForAbort(0.2)
                 continue
+            if xbmc.getCondVisibility("Skin.HasSetting(TrailerPlaying)"):
+                # xbmc.executebuiltin(
+                #     "Notification(Trailer, Detected and Waiting for Start)"
+                # )
+                while not xbmc.Player().isPlaying():
+                    if self.waitForAbort(0.5):
+                        break
+                # xbmc.executebuiltin("Notification(Trailer, Detected and Playing)")
+                while xbmc.Player().isPlaying():
+                    current_window_xml = xbmc.getInfoLabel("Window.Property(xmlfile)")
+                    if (
+                        r"C:\Users\Ivar\AppData\Roaming\Kodi\addons\plugin.video.fen\resources\skins\Default\1080i\extras"
+                        in current_window_xml
+                        or not self.get_visibility(
+                            "Window.IsVisible(videos) | Window.IsVisible(home) | Window.IsVisible(11121)"
+                        )
+                    ):
+                        xbmc.Player().stop()
+                        break
+                    if self.waitForAbort(0.5):
+                        break
+                xbmc.executebuiltin("Skin.ToggleSetting(TrailerPlaying)")
+                # xbmc.executebuiltin("Notification(Trailer, Ended)")
+                self.waitForAbort(1)
+                continue
             imdb_id = self.get_infolabel("ListItem.IMDBNumber")
             set_property = self.window(self.get_window_id()).setProperty
             get_property = self.window(self.get_window_id()).getProperty
