@@ -57,12 +57,7 @@ class RatingsService(xbmc.Monitor):
                 self.waitForAbort(0.2)
                 continue
             if self.get_visibility("Skin.HasSetting(TrailerPlaying)"):
-                # xbmc.executebuiltin(
-                #     "Notification(Trailer, Trailer Detected and Waiting for Start)"
-                # )
-                while not xbmc.Player().isPlaying():
-                    if self.waitForAbort(0.5):
-                        break
+                self.waitForAbort(3)
                 # xbmc.executebuiltin("Notification(Trailer, Trailer Is Now Playing)")
                 while xbmc.Player().isPlaying():
                     if self.waitForAbort(0.5):
