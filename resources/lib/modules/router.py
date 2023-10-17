@@ -93,3 +93,8 @@ def routing():
         from modules.MDbList import play_trailer
 
         return play_trailer()
+
+    if mode == "fix_black_screen":
+        from modules.custom_actions import fix_black_screen
+
+        return fix_black_screen()
