@@ -14,6 +14,11 @@ def set_image():
         xbmc.executebuiltin("Skin.SetString(CustomBackground,%s)" % image_file)
 
 
+def fix_black_screen():
+    if xbmc.getCondVisibility("Skin.HasSetting(TrailerPlaying)"):
+        xbmc.executebuiltin("Skin.ToggleSetting(TrailerPlaying)")
+
+
 # def get_current_keymap_path():
 #     for keymap_name in POSSIBLE_KEYMAP_NAMES:
 #         keymap_path = xbmcvfs.translatePath(KEYMAP_LOCATION + keymap_name)
