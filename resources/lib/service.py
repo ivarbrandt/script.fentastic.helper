@@ -67,8 +67,7 @@ class RatingsService(xbmc.Monitor):
                 while xbmc.Player().isPlaying():
                     current_window_xml = self.get_infolabel("Window.Property(xmlfile)")
                     if (
-                        r"C:\Users\Ivar\AppData\Roaming\Kodi\addons\plugin.video.fen\resources\skins\Default\1080i\extras"
-                        in current_window_xml
+                        r"resources\skins\Default\1080i\extras" in current_window_xml
                         or not self.get_visibility(
                             "Window.IsVisible(videos) | Window.IsVisible(home) | Window.IsVisible(11121)"
                         )
