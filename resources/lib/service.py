@@ -79,7 +79,7 @@ class RatingsService(xbmc.Monitor):
                         break
                 xbmc.executebuiltin("Skin.ToggleSetting(TrailerPlaying)")
                 # xbmc.executebuiltin("Notification(Trailer, Ended)")
-                self.waitForAbort(1)
+                self.waitForAbort(0.2)
                 continue
             imdb_id = self.get_infolabel("ListItem.IMDBNumber")
             set_property = self.window(self.get_window_id()).setProperty
