@@ -19,6 +19,7 @@ class RatingsService(xbmc.Monitor):
     def __init__(self):
         xbmc.Monitor.__init__(self)
         self.mdblist_api = MDbListAPI
+        self.last_set_imdb_id = None
         self.window = xbmcgui.Window
         self.get_window_id = xbmcgui.getCurrentWindowId
         self.get_infolabel = xbmc.getInfoLabel
@@ -73,12 +74,17 @@ class RatingsService(xbmc.Monitor):
             if not imdb_id or not imdb_id.startswith("tt"):
                 for k, v in empty_ratings.items():
                     set_property("fentastic.%s" % k, v)
+                self.last_set_imdb_id = None
+                self.waitForAbort(0.2)
+                continue
+            if imdb_id == self.last_set_imdb_id:
                 self.waitForAbort(0.2)
                 continue
             if cached_ratings:
                 result = json.loads(cached_ratings)
                 for k, v in result.items():
                     set_property("fentastic.%s" % k, v)
+                self.last_set_imdb_id = imdb_id
                 self.waitForAbort(0.2)
                 continue
             Thread(target=self.set_ratings, args=(api_key, imdb_id)).start()
