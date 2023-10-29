@@ -59,12 +59,10 @@ class RatingsService(xbmc.Monitor):
                 continue
             if self.get_visibility("Skin.HasSetting(TrailerPlaying)"):
                 self.waitForAbort(3)
-                # xbmc.executebuiltin("Notification(Trailer, Trailer Is Now Playing)")
                 while xbmc.Player().isPlaying():
                     if self.waitForAbort(0.5):
                         break
                 xbmc.executebuiltin("Skin.ToggleSetting(TrailerPlaying)")
-                # xbmc.executebuiltin("Notification(Trailer, Trailer Has Ended)")
                 self.waitForAbort(0.2)
                 continue
             imdb_id = self.get_infolabel("ListItem.IMDBNumber")

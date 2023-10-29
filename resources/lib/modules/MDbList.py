@@ -191,7 +191,6 @@ def play_trailer():
     trailer_id = xbmc.getInfoLabel("Window.Property(fentastic.trailer)")
     if trailer_id:
         xbmc.executebuiltin("Skin.SetBool(TrailerPlaying)")
-        # xbmc.executebuiltin("Notification(Trailer, Trailer Has Started)")
         play_url = "plugin://plugin.video.youtube/play/?video_id=" + trailer_id
         play_trailer_in_window(play_url)
 
