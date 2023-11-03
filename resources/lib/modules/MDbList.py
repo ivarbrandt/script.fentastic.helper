@@ -172,13 +172,17 @@ class MDbListAPI:
                 else:
                     data["tmdbRating"] = ""
                     data["tmdbImage"] = ""
+            # trailer = json_data.get("trailer", "")
+            # match = re.search(r"v=([a-zA-Z0-9_-]+)", trailer)
+            # if match:
+            #     video_id = match.group(1)
+            # else:
+            #     video_id = ""
+            # data["trailer"] = video_id
             trailer = json_data.get("trailer", "")
-            match = re.search(r"v=([a-zA-Z0-9_-]+)", trailer)
-            if match:
-                video_id = match.group(1)
-            else:
-                video_id = ""
-            data["trailer"] = video_id
+            if not trailer:
+                trailer = ""
+            data["trailer"] = trailer
         return data
 
 
@@ -187,12 +191,23 @@ def play_trailer_in_window(play_url):
     xbmc.Player().play(play_url, list_item)
 
 
+# def play_trailer():
+#     trailer_id = xbmc.getInfoLabel("Window.Property(fentastic.trailer)")
+#     if trailer_id:
+#         xbmc.executebuiltin("Skin.SetBool(TrailerPlaying)")
+#         play_url = "plugin://plugin.video.youtube/play/?video_id=" + trailer_id
+#         play_trailer_in_window(play_url)
+
+
 def play_trailer():
-    trailer_id = xbmc.getInfoLabel("Window.Property(fentastic.trailer)")
-    if trailer_id:
-        xbmc.executebuiltin("Skin.SetBool(TrailerPlaying)")
-        play_url = "plugin://plugin.video.youtube/play/?video_id=" + trailer_id
-        play_trailer_in_window(play_url)
+    trailer_url = xbmc.getInfoLabel("Window.Property(fentastic.trailer)")
+    if trailer_url:
+        match = re.search(r"v=([a-zA-Z0-9_-]+)", trailer_url)
+        if match:
+            video_id = match.group(1)
+            xbmc.executebuiltin("Skin.SetBool(TrailerPlaying)")
+            play_url = "plugin://plugin.video.youtube/play/?video_id=" + video_id
+            play_trailer_in_window(play_url)
 
 
 def set_api_key():
