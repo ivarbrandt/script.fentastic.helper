@@ -172,13 +172,6 @@ class MDbListAPI:
                 else:
                     data["tmdbRating"] = ""
                     data["tmdbImage"] = ""
-            # trailer = json_data.get("trailer", "")
-            # match = re.search(r"v=([a-zA-Z0-9_-]+)", trailer)
-            # if match:
-            #     video_id = match.group(1)
-            # else:
-            #     video_id = ""
-            # data["trailer"] = video_id
             trailer = json_data.get("trailer", "")
             if not trailer:
                 trailer = ""
@@ -189,14 +182,6 @@ class MDbListAPI:
 def play_trailer_in_window(play_url):
     list_item = xbmcgui.ListItem(path=play_url)
     xbmc.Player().play(play_url, list_item)
-
-
-# def play_trailer():
-#     trailer_id = xbmc.getInfoLabel("Window.Property(fentastic.trailer)")
-#     if trailer_id:
-#         xbmc.executebuiltin("Skin.SetBool(TrailerPlaying)")
-#         play_url = "plugin://plugin.video.youtube/play/?video_id=" + trailer_id
-#         play_trailer_in_window(play_url)
 
 
 def play_trailer():
